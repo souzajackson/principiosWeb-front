@@ -5,6 +5,8 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Separator } from './ui/separator';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { login } from '@/services/AuthService';
+import { ApiError } from '@/lib/api';
 
 interface LoginScreenProps {
   onGoToSignup: () => void;
@@ -16,11 +18,24 @@ export function LoginScreen({ onGoToSignup, onLogin }: LoginScreenProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt with:', { email, password });
-    // Aqui você pode adicionar a lógica de autenticação
-    onLogin();
+    setErrorMsg(null);
+
+    try {
+      setIsSubmitting(true);
+      await login({ email, password }); // salva token no localStorage
+      onLogin();
+    } catch (err) {
+      if (err instanceof ApiError) setErrorMsg(err.message);
+      else if (err instanceof Error) setErrorMsg(err.message);
+      else setErrorMsg('Falha ao fazer login.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

@@ -5,6 +5,9 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
+import { createUser, type UserRole } from '@/services/UserService';
+import { ApiError } from '@/lib/api';
+
 interface SignupScreenProps {
   onProceedToShelter: (userData: {
     name: string;
@@ -22,16 +25,28 @@ export function SignupScreen({ onProceedToShelter, onGoToLogin, onSignupComplete
   const [showPassword, setShowPassword] = useState(false);
   const [isShelter, setIsShelter] = useState(false);
 
-  const handleSignup = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (isShelter) {
-      // Se for abrigo, passa os dados e vai para a tela de cadastro de abrigo
-      onProceedToShelter({ name, email, password });
-    } else {
-      // Se não for abrigo, finaliza o cadastro
-      console.log('Signup completed:', { name, email, password, isShelter });
-      onSignupComplete();
+    setErrorMsg(null);
+
+    const role: UserRole = isShelter ? 'SHELTER' : 'USER';
+    console.log("tentando")
+    try {
+      setIsSubmitting(true);
+
+      await createUser({ name, email, password, role });
+
+      if (isShelter) onProceedToShelter({ name, email, password });
+      else onSignupComplete();
+    } catch (err) {
+      if (err instanceof ApiError) setErrorMsg(err.message);
+      else if (err instanceof Error) setErrorMsg(err.message);
+      else setErrorMsg('Falha ao criar conta.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
