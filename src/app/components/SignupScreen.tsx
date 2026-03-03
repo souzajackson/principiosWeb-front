@@ -7,7 +7,7 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 
 import { createUser, type UserRole } from '@/services/UserService';
 import { ApiError } from '@/lib/api';
-import { login } from '@/services/AuthService';
+import { login } from '@/services/ApiService';
 
 interface SignupScreenProps {
   onProceedToShelter: (userData: {
@@ -39,7 +39,7 @@ export function SignupScreen({ onProceedToShelter, onGoToLogin, onSignupComplete
       setIsSubmitting(true);
 
       await createUser({ name, email, password, role });
-      await login({ email, password });
+      await login(email, password);
       
       if (isShelter) onProceedToShelter({ name, email, password });
       else onSignupComplete();

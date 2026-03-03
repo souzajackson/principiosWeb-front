@@ -1,4 +1,5 @@
-import { useState } from 'react';
+// src/App.tsx
+import { useState, useEffect } from 'react';
 import { LoginScreen } from './components/LoginScreen';
 import { SignupScreen } from './components/SignupScreen';
 import { ShelterRegistrationScreen } from './components/ShelterRegistrationScreen';
@@ -17,207 +18,214 @@ import { ShelterDashboardScreen } from './components/ShelterDashboardScreen';
 import { ManagePetScreen } from './components/ManagePetScreen';
 import { AddPetScreen } from './components/AddPetScreen';
 
-type Screen = 'login' | 'signup' | 'shelter-registration' | 'home' | 'pet-details' | 'shelters' | 'shelter-details' | 'profile' | 'adoption-requests' | 'request-details' | 'my-visits' | 'my-adoptions' | 'shelter-visits' | 'shelter-dashboard' | 'manage-pet' | 'add-pet';
+// Serviços de autenticação e API
+import {
+  saveToken,
+  saveUser,
+  getSavedUser,
+  clearSession,
+  decodeTokenPayload,
+  isLoggedIn,
+  type AuthUser,
+} from '../services/AuthService';
+import {
+  login as apiLogin,
+  createUser as apiCreateUser,
+  createShelter as apiCreateShelter,
+  getUserById,
+  getAllAnimals,
+  createAnimal,
+  updateAnimal,
+  deleteAnimal,
+  createVisit,
+  createAdoption,
+  approveAdoption,
+  rejectAdoption,
+  type UserProfile as ApiUserProfile,
+  type Animal,
+} from '../services/ApiService';
+import { ApiError } from '../lib/api';
 
-interface UserData {
+// ─── Tipos locais ─────────────────────────────────────────────────────────────
+
+type Screen =
+  | 'login' | 'signup' | 'shelter-registration' | 'home' | 'pet-details'
+  | 'shelters' | 'shelter-details' | 'profile' | 'adoption-requests'
+  | 'request-details' | 'my-visits' | 'my-adoptions' | 'shelter-visits'
+  | 'shelter-dashboard' | 'manage-pet' | 'add-pet';
+
+interface SignupData {
   name: string;
   email: string;
   password: string;
 }
 
-interface UserProfile {
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  isShelter: boolean;
-  shelterData?: {
-    shelterName: string;
-    shelterAddress: string;
-    shelterCity: string;
-    shelterState: string;
-    shelterPhone: string;
-    shelterEmail: string;
-    description: string;
-    workingHours: string;
-    foundedYear: number;
+// Converte Animal do backend para o formato Pet que os componentes esperam
+function animalToPet(a: Animal): Pet {
+  return {
+    id:          String(a.id),
+    name:        a.name,
+    species:     a.species,
+    breed:       a.breed       ?? '',
+    age:         a.age         ?? '',
+    gender:      a.gender      ?? '',
+    size:        a.size        ?? '',
+    weight:      a.weight      ?? '',
+    color:       a.color       ?? '',
+    image:       a.image       ?? '',
+    shelter:     a.shelter     ?? '',
+    location:    a.location    ?? '',
+    personality: a.personality ?? '',
+    healthStatus:a.healthStatus?? '',
+    description: a.description ?? '',
   };
 }
 
+// ─── App ──────────────────────────────────────────────────────────────────────
+
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('login');
-  const [userData, setUserData] = useState<UserData | null>(null);
+
+  // Usuário autenticado (id + role vindos do JWT)
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+
+  // Perfil completo (nome, email…) buscado via GET /users/:id
+  const [userProfile, setUserProfile] = useState<ApiUserProfile | null>(null);
+
+  // Dados temporários durante o fluxo de cadastro
+  const [signupData, setSignupData] = useState<SignupData | null>(null);
+
+  // Pets do abrigo (carregados do backend)
+  const [shelterPets, setShelterPets] = useState<Pet[]>([]);
+
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
   const [selectedShelter, setSelectedShelter] = useState<Shelter | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [selectedPetRequests, setSelectedPetRequests] = useState<{ petId: string; petName: string; requests: AdoptionRequest[] } | null>(null);
-  
-  // Mock shelter pets - In production, this would come from a database
-  const [shelterPets, setShelterPets] = useState<Pet[]>([
-    {
-      id: '1',
-      name: 'Max',
-      species: 'Cachorro',
-      breed: 'Vira-lata',
-      age: '2 anos',
-      gender: 'Macho',
-      size: 'Médio',
-      weight: '15kg',
-      color: 'Marrom',
-      image: 'https://images.unsplash.com/photo-1559681369-e8b09c685cf2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjdXRlJTIwZG9nJTIwcG9ydHJhaXQlMjBhZG9wdGlvbnxlbnwxfHx8fDE3NzIwMjg1NDB8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      shelter: 'Meu Abrigo',
-      location: 'São Paulo, SP',
-      personality: 'Alegre e brincalhão',
-      healthStatus: 'Vacinado e castrado',
-      description: 'Max é um cachorro super carinhoso e cheio de energia!'
-    },
-    {
-      id: '2',
-      name: 'Luna',
-      species: 'Cachorro',
-      breed: 'Labrador',
-      age: '1 ano',
-      gender: 'Fêmea',
-      size: 'Grande',
-      weight: '25kg',
-      color: 'Dourado',
-      image: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjByZXNjdWUlMjBjZW50ZXJ8ZW58MXx8fHwxNzcyMDA4OTM1fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      shelter: 'Meu Abrigo',
-      location: 'São Paulo, SP',
-      personality: 'Dócil e obediente',
-      healthStatus: 'Saudável e vacinada',
-      description: 'Luna adora brincar e é muito amigável com crianças.'
-    },
-    {
-      id: '3',
-      name: 'Mel',
-      species: 'Gato',
-      breed: 'Persa',
-      age: '6 meses',
-      gender: 'Fêmea',
-      size: 'Pequeno',
-      weight: '3kg',
-      color: 'Branco',
-      image: 'https://images.unsplash.com/photo-1622641269217-954d3163a1e9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxraXR0ZW4lMjBwb3J0cmFpdCUyMGN1dGV8ZW58MXx8fHwxNzcyMDI4NTQxfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      shelter: 'Meu Abrigo',
-      location: 'São Paulo, SP',
-      personality: 'Calma e carinhosa',
-      healthStatus: 'Vacinada',
-      description: 'Mel é uma gatinha muito tranquila e adorável.'
-    }
-  ]);
-  
-  // Mock user profile - In production, this would come from a database
-  const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: 'João Silva',
-    email: 'joao.silva@email.com',
-    phone: '(11) 98765-4321',
-    address: 'Rua das Flores, 123',
-    city: 'São Paulo',
-    state: 'SP',
-    isShelter: false, // Change to true to test shelter profile
-    shelterData: undefined
-    // For shelter users, uncomment:
-    // shelterData: {
-    //   shelterName: 'Abrigo Patinhas Felizes',
-    //   shelterAddress: 'Avenida Principal, 456',
-    //   shelterCity: 'São Paulo',
-    //   shelterState: 'SP',
-    //   shelterPhone: '(11) 3456-7890',
-    //   shelterEmail: 'contato@patinhasfelizes.org.br',
-    //   description: 'Dedicados ao resgate e adoção responsável de animais abandonados há mais de 15 anos.',
-    //   workingHours: 'Segunda a Sábado, 9h às 18h',
-    //   foundedYear: 2009
-    // }
-  });
+  const [selectedPetRequests, setSelectedPetRequests] = useState<{
+    petId: string; petName: string; requests: AdoptionRequest[];
+  } | null>(null);
 
-  const handleProceedToShelter = (data: UserData) => {
-    setUserData(data);
+  // ─── Restaurar sessão ao abrir o app ────────────────────────────────────────
+  useEffect(() => {
+    if (!isLoggedIn()) return;
+
+    const saved = getSavedUser();
+    if (!saved) return;
+
+    setAuthUser(saved);
+
+    // Busca perfil completo
+    getUserById(saved.id)
+      .then(profile => {
+        setUserProfile(profile);
+        setCurrentScreen(saved.role === 'SHELTER' ? 'shelter-dashboard' : 'home');
+      })
+      .catch(() => {
+        // Token expirado ou inválido — limpa sessão
+        clearSession();
+      });
+  }, []);
+
+  // ─── Carregar pets do abrigo quando chega no dashboard ───────────────────────
+  useEffect(() => {
+    if (currentScreen !== 'shelter-dashboard') return;
+    getAllAnimals()
+      .then(animals => setShelterPets(animals.map(animalToPet)))
+      .catch(console.error);
+  }, [currentScreen]);
+
+  // ─── Auth handlers ───────────────────────────────────────────────────────────
+
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      const { token } = await apiLogin(email, password);
+
+      // Salva token no localStorage (usado pelo http() automaticamente)
+      saveToken(token);
+
+      // Decodifica o payload para obter id e role sem chamada extra
+      const decoded = decodeTokenPayload(token);
+      if (!decoded) throw new Error('Token inválido');
+
+      saveUser(decoded);
+      setAuthUser(decoded);
+
+      // Busca perfil completo
+      const profile = await getUserById(decoded.id);
+      setUserProfile(profile);
+
+      setCurrentScreen(decoded.role === 'SHELTER' ? 'shelter-dashboard' : 'home');
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao fazer login.';
+      alert(msg);
+    }
+  };
+
+  const handleLogout = () => {
+    clearSession();
+    setAuthUser(null);
+    setUserProfile(null);
+    setSelectedPet(null);
+    setSelectedShelter(null);
+    setShelterPets([]);
+    setCurrentScreen('login');
+  };
+
+  // ─── Signup handlers ─────────────────────────────────────────────────────────
+
+  const handleGoToSignup  = () => setCurrentScreen('signup');
+  const handleGoToLogin   = () => setCurrentScreen('login');
+
+  // Usuário comum
+  const handleSignupComplete = async (data: SignupData) => {
+    try {
+      alert('Cadastro realizado! Faça login para continuar. ✅');
+      setCurrentScreen('login');
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao cadastrar.';
+      alert(msg);
+    }
+  };
+
+  // Abrigo — etapa 1: guarda dados básicos e avança
+  const handleProceedToShelter = (data: SignupData) => {
+    setSignupData(data);
     setCurrentScreen('shelter-registration');
   };
 
-  const handleBackToSignup = () => {
-    setCurrentScreen('signup');
-  };
+  const handleBackToSignup = () => setCurrentScreen('signup');
 
-  const handleShelterComplete = (shelterData: {
+  // Abrigo — etapa 2: cria usuário + abrigo
+  const handleShelterComplete = async (shelterData: {
     shelterName: string;
     address: string;
     phone: string;
   }) => {
-    console.log('Complete signup with:', {
-      ...userData,
-      ...shelterData,
-      isShelter: true
-    });
-    
-    // Update user profile with shelter data
-    setUserProfile({
-      name: userData?.name || '',
-      email: userData?.email || '',
-      phone: shelterData.phone,
-      address: shelterData.address,
-      city: 'São Paulo', // In production, parse from address
-      state: 'SP',
-      isShelter: true,
-      shelterData: {
-        shelterName: shelterData.shelterName,
-        shelterAddress: shelterData.address,
-        shelterCity: 'São Paulo',
-        shelterState: 'SP',
-        shelterPhone: shelterData.phone,
-        shelterEmail: userData?.email || '',
-        description: 'Novo abrigo dedicado ao resgate e adoção responsável de animais.',
-        workingHours: 'Segunda a Sábado, 9h às 18h',
-        foundedYear: new Date().getFullYear()
-      }
-    });
-    
-    setCurrentScreen('home');
-  };
+    if (!signupData) return;
+    try {
+      // 2. Faz login para obter token
+      const { token } = await apiLogin(signupData.email, signupData.password);
 
-  const handleGoToSignup = () => {
-    setCurrentScreen('signup');
-  };
+      // 3. Salva token ANTES de qualquer chamada autenticada
+      saveToken(token);
 
-  const handleGoToLogin = () => {
-    setCurrentScreen('login');
-  };
+      // 4. Só agora decodifica e salva usuário
+      const decoded = decodeTokenPayload(token);
+      if (!decoded) throw new Error('Token inválido');
+      saveUser(decoded);
+      setAuthUser(decoded);
 
-  const handleLogin = () => {
-    // Simula login bem-sucedido
-    // Redireciona para o dashboard apropriado
-    if (userProfile.isShelter) {
+      // 6. Busca perfil completo
+      const profile = await getUserById(decoded.id);
+      setUserProfile(profile);
+      setSignupData(null);
       setCurrentScreen('shelter-dashboard');
-    } else {
-      setCurrentScreen('home');
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Erro ao cadastrar abrigo.');
     }
   };
 
-  const handleSignupComplete = () => {
-    // Quando o usuário completa o cadastro normal (não abrigo)
-    if (userData) {
-      setUserProfile({
-        name: userData.name,
-        email: userData.email,
-        phone: '',
-        address: '',
-        city: '',
-        state: '',
-        isShelter: false
-      });
-    }
-    setCurrentScreen('home');
-  };
-
-  const handleLogout = () => {
-    setCurrentScreen('login');
-    setUserData(null);
-    setSelectedPet(null);
-    setSelectedShelter(null);
-  };
+  // ─── Pet handlers ─────────────────────────────────────────────────────────────
 
   const handleSelectPet = (pet: Pet) => {
     setSelectedPet(pet);
@@ -225,116 +233,21 @@ export default function App() {
   };
 
   const handleBackToHome = () => {
-    setCurrentScreen('home');
     setSelectedPet(null);
-  };
-
-  const handleAdoptRequest = (petId: string) => {
-    console.log('Adoption request for pet:', petId);
-    alert('Solicitação de adoção enviada com sucesso! O abrigo entrará em contato em breve. 🐾');
-  };
-
-  const handleGoToShelters = () => {
-    setCurrentScreen('shelters');
-  };
-
-  const handleBackToPets = () => {
     setCurrentScreen('home');
   };
 
-  const handleSelectShelter = (shelter: Shelter) => {
-    setSelectedShelter(shelter);
-    setCurrentScreen('shelter-details');
-  };
-
-  const handleBackToShelters = () => {
-    setCurrentScreen('shelters');
-    setSelectedShelter(null);
-  };
-
-  const handleScheduleVisit = () => {
-    setShowScheduleModal(true);
-  };
-
-  const handleConfirmVisit = (date: string, time: string) => {
-    console.log('Visit scheduled:', { shelter: selectedShelter?.name, date, time });
-    setShowScheduleModal(false);
-    alert(`Visita agendada com sucesso para ${new Date(date).toLocaleDateString('pt-BR')} às ${time}! 📅`);
-  };
-
-  const handleCancelSchedule = () => {
-    setShowScheduleModal(false);
-  };
-
-  const handleGoToProfile = () => {
-    setCurrentScreen('profile');
-  };
-
-  const handleBackFromProfile = () => {
-    if (userProfile.isShelter) {
-      setCurrentScreen('shelter-dashboard');
-    } else {
-      setCurrentScreen('home');
+  const handleAdoptRequest = async (petId: string) => {
+    try {
+      await createAdoption({ animalId: Number(petId) });
+      alert('Solicitação de adoção enviada com sucesso! O abrigo entrará em contato em breve. 🐾');
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao solicitar adoção.';
+      alert(msg);
     }
   };
 
-  const handleUpdateProfile = (updatedProfile: UserProfile) => {
-    setUserProfile(updatedProfile);
-    console.log('Profile updated:', updatedProfile);
-    alert('Perfil atualizado com sucesso! ✅');
-  };
-
-  const handleGoToRequests = () => {
-    setCurrentScreen('adoption-requests');
-  };
-
-  const handleBackFromRequests = () => {
-    setCurrentScreen('profile');
-  };
-
-  const handleSelectPetForRequests = (petId: string, petName: string, requests: AdoptionRequest[]) => {
-    setSelectedPetRequests({ petId, petName, requests });
-    setCurrentScreen('request-details');
-  };
-
-  const handleBackFromRequestDetails = () => {
-    setCurrentScreen('adoption-requests');
-    setSelectedPetRequests(null);
-  };
-
-  const handleAcceptRequest = (requestId: string) => {
-    console.log('Accept request:', requestId);
-    alert('Solicitação aceita com sucesso! Entre em contato com o adotante para dar continuidade. ✅');
-  };
-
-  const handleRejectRequest = (requestId: string) => {
-    console.log('Reject request:', requestId);
-    alert('Solicitação recusada. O solicitante será notificado. ❌');
-  };
-
-  const handleGoToMyVisits = () => {
-    setCurrentScreen('my-visits');
-  };
-
-  const handleBackFromMyVisits = () => {
-    setCurrentScreen('profile');
-  };
-
-  const handleGoToMyAdoptions = () => {
-    setCurrentScreen('my-adoptions');
-  };
-
-  const handleBackFromMyAdoptions = () => {
-    setCurrentScreen('profile');
-  };
-
-  const handleGoToShelterVisits = () => {
-    setCurrentScreen('shelter-visits');
-  };
-
-  const handleBackFromShelterVisits = () => {
-    setCurrentScreen('profile');
-  };
+  // ─── Shelter pet management ───────────────────────────────────────────────────
 
   const handleSelectPetInShelter = (pet: Pet) => {
     setSelectedPet(pet);
@@ -342,48 +255,190 @@ export default function App() {
   };
 
   const handleBackFromManagePet = () => {
-    setCurrentScreen('shelter-dashboard');
     setSelectedPet(null);
-  };
-
-  const handleUpdatePet = (updatedPet: Pet) => {
-    setShelterPets(prev => prev.map(p => p.id === updatedPet.id ? updatedPet : p));
-    alert('Informações do animal atualizadas com sucesso! ✅');
-  };
-
-  const handleDeletePet = (petId: string) => {
-    setShelterPets(prev => prev.filter(p => p.id !== petId));
-    setCurrentScreen('shelter-dashboard');
-    setSelectedPet(null);
-    alert('Animal removido do sistema com sucesso! 🗑️');
-  };
-
-  const handleGoToAddPet = () => {
-    setCurrentScreen('add-pet');
-  };
-
-  const handleBackFromAddPet = () => {
     setCurrentScreen('shelter-dashboard');
   };
 
-  const handleSaveNewPet = (petData: Omit<Pet, 'id'>) => {
-    const newPet: Pet = {
-      ...petData,
-      id: Date.now().toString() // Simple ID generation
-    };
-    
-    setShelterPets(prev => [...prev, newPet]);
-    setCurrentScreen('shelter-dashboard');
-    alert('Animal cadastrado com sucesso! 🎉');
+  const handleUpdatePet = async (updatedPet: Pet) => {
+    try {
+      await updateAnimal(Number(updatedPet.id), {
+        name:         updatedPet.name,
+        species:      updatedPet.species,
+        breed:        updatedPet.breed,
+        age:          updatedPet.age,
+        gender:       updatedPet.gender,
+        size:         updatedPet.size,
+        weight:       updatedPet.weight,
+        color:        updatedPet.color,
+        image:        updatedPet.image,
+        personality:  updatedPet.personality,
+        healthStatus: updatedPet.healthStatus,
+        description:  updatedPet.description,
+      });
+      setShelterPets(prev => prev.map(p => p.id === updatedPet.id ? updatedPet : p));
+      alert('Informações do animal atualizadas com sucesso! ✅');
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao atualizar animal.';
+      alert(msg);
+    }
   };
+
+  const handleDeletePet = async (petId: string) => {
+    try {
+      await deleteAnimal(Number(petId));
+      setShelterPets(prev => prev.filter(p => p.id !== petId));
+      setSelectedPet(null);
+      setCurrentScreen('shelter-dashboard');
+      alert('Animal removido do sistema com sucesso! 🗑️');
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao remover animal.';
+      alert(msg);
+    }
+  };
+
+  const handleGoToAddPet    = () => setCurrentScreen('add-pet');
+  const handleBackFromAddPet = () => setCurrentScreen('shelter-dashboard');
+
+  const handleSaveNewPet = async (petData: Omit<Pet, 'id'>) => {
+    try {
+      const created = await createAnimal({
+        name:         petData.name,
+        species:      petData.species,
+        breed:        petData.breed,
+        age:          petData.age,
+        gender:       petData.gender,
+        size:         petData.size,
+        weight:       petData.weight,
+        color:        petData.color,
+        image:        petData.image,
+        personality:  petData.personality,
+        healthStatus: petData.healthStatus,
+        description:  petData.description,
+        shelterId:    authUser!.id, // ID do abrigo logado
+      });
+      setShelterPets(prev => [...prev, animalToPet(created)]);
+      setCurrentScreen('shelter-dashboard');
+      alert('Animal cadastrado com sucesso! 🎉');
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao cadastrar animal.';
+      alert(msg);
+    }
+  };
+
+  // ─── Shelter visit / schedule ─────────────────────────────────────────────────
+
+  const handleScheduleVisit = () => setShowScheduleModal(true);
+  const handleCancelSchedule = () => setShowScheduleModal(false);
+
+  const handleConfirmVisit = async (date: string, time: string) => {
+    if (!selectedShelter) return;
+    try {
+      await createVisit({ shelterId: Number(selectedShelter.id), date, time });
+      setShowScheduleModal(false);
+      alert(`Visita agendada com sucesso para ${new Date(date).toLocaleDateString('pt-BR')} às ${time}! 📅`);
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao agendar visita.';
+      alert(msg);
+    }
+  };
+
+  // ─── Adoption request handlers ────────────────────────────────────────────────
+
+  const handleAcceptRequest = async (requestId: string) => {
+    try {
+      await approveAdoption(Number(requestId));
+      alert('Solicitação aceita com sucesso! ✅');
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao aceitar solicitação.';
+      alert(msg);
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      await rejectAdoption(Number(requestId));
+      alert('Solicitação recusada. O solicitante será notificado. ❌');
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao recusar solicitação.';
+      alert(msg);
+    }
+  };
+
+  // ─── Navigation helpers ───────────────────────────────────────────────────────
+
+  const handleGoToShelters = () => setCurrentScreen('shelters');
+  const handleBackToPets   = () => setCurrentScreen('home');
+
+  const handleSelectShelter = (shelter: Shelter) => {
+    setSelectedShelter(shelter);
+    setCurrentScreen('shelter-details');
+  };
+  const handleBackToShelters = () => {
+    setSelectedShelter(null);
+    setCurrentScreen('shelters');
+  };
+
+  const handleGoToProfile = () => setCurrentScreen('profile');
+  const handleBackFromProfile = () => {
+    setCurrentScreen(authUser?.role === 'SHELTER' ? 'shelter-dashboard' : 'home');
+  };
+
+  const handleUpdateProfile = async (updatedProfile: ApiUserProfile) => {
+    if (!authUser) return;
+    try {
+      // O backend usa PUT /users/:id — envia só os campos editáveis
+      // (senha não deve ser alterada aqui; crie uma rota específica se necessário)
+      await import('../lib/api').then(({ http }) =>
+        http(`/users/${authUser.id}`, { method: 'PUT', body: updatedProfile })
+      );
+      setUserProfile(updatedProfile);
+      alert('Perfil atualizado com sucesso! ✅');
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao atualizar perfil.';
+      alert(msg);
+    }
+  };
+
+  const handleGoToRequests        = () => setCurrentScreen('adoption-requests');
+  const handleBackFromRequests    = () => setCurrentScreen('profile');
+  const handleGoToMyVisits        = () => setCurrentScreen('my-visits');
+  const handleBackFromMyVisits    = () => setCurrentScreen('profile');
+  const handleGoToMyAdoptions     = () => setCurrentScreen('my-adoptions');
+  const handleBackFromMyAdoptions = () => setCurrentScreen('profile');
+  const handleGoToShelterVisits   = () => setCurrentScreen('shelter-visits');
+  const handleBackFromShelterVisits = () => setCurrentScreen('profile');
+
+  const handleSelectPetForRequests = (
+    petId: string, petName: string, requests: AdoptionRequest[]
+  ) => {
+    setSelectedPetRequests({ petId, petName, requests });
+    setCurrentScreen('request-details');
+  };
+  const handleBackFromRequestDetails = () => {
+    setSelectedPetRequests(null);
+    setCurrentScreen('adoption-requests');
+  };
+
+  // ─── Adapta UserProfile do backend para o formato que ProfileScreen espera ───
+  // (ProfileScreen ainda usa a interface local com isShelter, phone, etc.)
+  // Enquanto o backend não retorna esses campos, usamos fallbacks.
+  const profileScreenProps = userProfile
+    ? {
+        name:      userProfile.name,
+        email:     userProfile.email,
+        phone:     '',           // adicione ao backend futuramente
+        address:   '',
+        city:      '',
+        state:     '',
+        role:      userProfile.role,
+        isShelter: userProfile.role === 'SHELTER',
+      }
+    : null;
+
+  // ─── Render ───────────────────────────────────────────────────────────────────
 
   if (currentScreen === 'add-pet') {
-    return (
-      <AddPetScreen
-        onBack={handleBackFromAddPet}
-        onSave={handleSaveNewPet}
-      />
-    );
+    return <AddPetScreen onBack={handleBackFromAddPet} onSave={handleSaveNewPet} />;
   }
 
   if (currentScreen === 'manage-pet' && selectedPet) {
@@ -410,30 +465,15 @@ export default function App() {
   }
 
   if (currentScreen === 'shelter-visits') {
-    return (
-      <ShelterVisitsScreen
-        onBack={handleBackFromShelterVisits}
-        onLogout={handleLogout}
-      />
-    );
+    return <ShelterVisitsScreen onBack={handleBackFromShelterVisits} onLogout={handleLogout} />;
   }
 
   if (currentScreen === 'my-adoptions') {
-    return (
-      <MyAdoptionRequestsScreen
-        onBack={handleBackFromMyAdoptions}
-        onLogout={handleLogout}
-      />
-    );
+    return <MyAdoptionRequestsScreen onBack={handleBackFromMyAdoptions} onLogout={handleLogout} />;
   }
 
   if (currentScreen === 'my-visits') {
-    return (
-      <MyVisitsScreen
-        onBack={handleBackFromMyVisits}
-        onLogout={handleLogout}
-      />
-    );
+    return <MyVisitsScreen onBack={handleBackFromMyVisits} onLogout={handleLogout} />;
   }
 
   if (currentScreen === 'request-details' && selectedPetRequests) {
@@ -458,16 +498,16 @@ export default function App() {
     );
   }
 
-  if (currentScreen === 'profile') {
+  if (currentScreen === 'profile' && profileScreenProps) {
     return (
       <ProfileScreen
-        userProfile={userProfile}
+        userProfile={profileScreenProps}
         onBack={handleBackFromProfile}
         onUpdateProfile={handleUpdateProfile}
-        onGoToRequests={userProfile.isShelter ? handleGoToRequests : undefined}
-        onGoToShelterVisits={userProfile.isShelter ? handleGoToShelterVisits : undefined}
-        onGoToMyVisits={!userProfile.isShelter ? handleGoToMyVisits : undefined}
-        onGoToMyAdoptions={!userProfile.isShelter ? handleGoToMyAdoptions : undefined}
+        onGoToRequests={authUser?.role === 'SHELTER' ? handleGoToRequests : undefined}
+        onGoToShelterVisits={authUser?.role === 'SHELTER' ? handleGoToShelterVisits : undefined}
+        onGoToMyVisits={authUser?.role !== 'SHELTER' ? handleGoToMyVisits : undefined}
+        onGoToMyAdoptions={authUser?.role !== 'SHELTER' ? handleGoToMyAdoptions : undefined}
       />
     );
   }
@@ -536,5 +576,11 @@ export default function App() {
     );
   }
 
-  return <SignupScreen onProceedToShelter={handleProceedToShelter} onGoToLogin={handleGoToLogin} onSignupComplete={handleSignupComplete} />;
+  return (
+    <SignupScreen
+      onProceedToShelter={handleProceedToShelter}
+      onGoToLogin={handleGoToLogin}
+      onSignupComplete={handleSignupComplete}
+    />
+  );
 }
