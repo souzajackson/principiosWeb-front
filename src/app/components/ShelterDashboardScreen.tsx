@@ -34,8 +34,8 @@ export function ShelterDashboardScreen({
                          pet.breed.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = selectedCategory === 'all' || 
-                           (selectedCategory === 'dogs' && pet.species === 'Cachorro') ||
-                           (selectedCategory === 'cats' && pet.species === 'Gato');
+                           (selectedCategory === 'dogs' && pet.type === 'Cachorro') ||
+                           (selectedCategory === 'cats' && pet.type === 'Gato');
     
     const matchesGender = selectedGender === 'all' || pet.gender === selectedGender;
     const matchesSize = selectedSize === 'all' || pet.size === selectedSize;
@@ -43,8 +43,8 @@ export function ShelterDashboardScreen({
     return matchesSearch && matchesCategory && matchesGender && matchesSize;
   });
 
-  const totalDogs = shelterPets.filter(p => p.species === 'Cachorro').length;
-  const totalCats = shelterPets.filter(p => p.species === 'Gato').length;
+  const totalDogs = shelterPets.filter(p => p.type === 'Cachorro').length;
+  const totalCats = shelterPets.filter(p => p.type === 'Gato').length;
 
   const clearFilters = () => {
     setSelectedGender('all');
@@ -302,7 +302,7 @@ export function ShelterDashboardScreen({
                 {/* Pet Image */}
                 <div className="relative h-64 bg-gray-200 overflow-hidden">
                   <ImageWithFallback
-                    src={pet.image}
+                    src={pet.imageUrl}
                     alt={pet.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
@@ -311,7 +311,7 @@ export function ShelterDashboardScreen({
                   </div>
                   <div className="absolute top-3 left-3">
                     <span className="px-3 py-1 bg-purple-600 text-white rounded-full text-sm">
-                      {pet.species}
+                      {pet.type}
                     </span>
                   </div>
                 </div>
@@ -320,7 +320,7 @@ export function ShelterDashboardScreen({
                 <div className="p-4">
                   <h3 className="text-xl text-gray-900 mb-2">{pet.name}</h3>
                   <div className="space-y-1 text-sm text-gray-600">
-                    <p>📍 {pet.breed}</p>
+                    <p>🐾 {pet.breed}</p>
                     <p>🎂 {pet.age}</p>
                     <p>⚧ {pet.gender}</p>
                     {pet.size && <p>📏 {pet.size}</p>}

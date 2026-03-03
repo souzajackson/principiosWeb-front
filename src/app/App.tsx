@@ -63,21 +63,23 @@ interface SignupData {
 // Converte Animal do backend para o formato Pet que os componentes esperam
 function animalToPet(a: Animal): Pet {
   return {
-    id:          String(a.id),
-    name:        a.name,
-    species:     a.species,
-    breed:       a.breed       ?? '',
-    age:         a.age         ?? '',
-    gender:      a.gender      ?? '',
-    size:        a.size        ?? '',
-    weight:      a.weight      ?? '',
-    color:       a.color       ?? '',
-    image:       a.image       ?? '',
-    shelter:     a.shelter     ?? '',
-    location:    a.location    ?? '',
-    personality: a.personality ?? '',
-    healthStatus:a.healthStatus?? '',
-    description: a.description ?? '',
+    id:           String(a.id),
+    name:         a.name,
+    type:         a.type          ?? '',
+    breed:        a.breed         ?? '',
+    age:          String(a.age),
+    gender:       a.gender        ?? '',
+    size:         a.size          ?? '',
+    imageUrl:     a.imageUrl      ?? '',
+    description:  a.description   ?? '',
+    personality:  a.personality   ?? '[]',
+    healthStatus: a.healthStatus  ?? '',
+    vaccinated:   a.vaccinated    ?? false,
+    neutered:     a.neutered      ?? false,
+    shelterName:  a.shelterName   ?? '',
+    shelterPhone: a.shelterPhone  ?? '',
+    shelterEmail: a.shelterEmail  ?? '',
+    location:     a.location      ?? '',
   };
 }
 
@@ -263,19 +265,19 @@ export default function App() {
     try {
       await updateAnimal(Number(updatedPet.id), {
         name:         updatedPet.name,
-        species:      updatedPet.species,
+        species:      updatedPet.type,
         breed:        updatedPet.breed,
-        age:          updatedPet.age,
+        age:          String(updatedPet.age),
         gender:       updatedPet.gender,
         size:         updatedPet.size,
-        weight:       updatedPet.weight,
-        color:        updatedPet.color,
-        image:        updatedPet.image,
+        image:        updatedPet.imageUrl,
         personality:  updatedPet.personality,
         healthStatus: updatedPet.healthStatus,
         description:  updatedPet.description,
       });
       setShelterPets(prev => prev.map(p => p.id === updatedPet.id ? updatedPet : p));
+      setSelectedPet(null);
+      setCurrentScreen('shelter-dashboard');
       alert('Informações do animal atualizadas com sucesso! ✅');
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Erro ao atualizar animal.';

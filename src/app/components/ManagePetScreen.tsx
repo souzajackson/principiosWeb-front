@@ -18,13 +18,11 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
   
   // Edit state
   const [name, setName] = useState(pet.name);
-  const [species, setSpecies] = useState(pet.species);
+  const [type, setType] = useState(pet.type);
   const [breed, setBreed] = useState(pet.breed);
   const [age, setAge] = useState(pet.age);
   const [gender, setGender] = useState(pet.gender);
   const [size, setSize] = useState(pet.size || '');
-  const [weight, setWeight] = useState(pet.weight || '');
-  const [color, setColor] = useState(pet.color || '');
   const [personality, setPersonality] = useState(pet.personality || '');
   const [healthStatus, setHealthStatus] = useState(pet.healthStatus || '');
   const [description, setDescription] = useState(pet.description || '');
@@ -33,16 +31,14 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
     const updatedPet: Pet = {
       ...pet,
       name,
-      species,
+      type,
       breed,
       age,
       gender,
       size,
-      weight,
-      color,
       personality,
       healthStatus,
-      description
+      description,
     };
     
     onUpdate(updatedPet);
@@ -52,13 +48,11 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
   const handleCancel = () => {
     // Reset to original values
     setName(pet.name);
-    setSpecies(pet.species);
+    setType(pet.type);
     setBreed(pet.breed);
     setAge(pet.age);
     setGender(pet.gender);
     setSize(pet.size || '');
-    setWeight(pet.weight || '');
-    setColor(pet.color || '');
     setPersonality(pet.personality || '');
     setHealthStatus(pet.healthStatus || '');
     setDescription(pet.description || '');
@@ -97,13 +91,13 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">
           <div className="h-96 bg-gray-200 relative">
             <ImageWithFallback
-              src={pet.image}
+              src={pet.imageUrl}
               alt={pet.name}
               className="w-full h-full object-cover"
             />
             <div className="absolute top-4 left-4">
               <span className="px-4 py-2 bg-purple-600 text-white rounded-full">
-                {species}
+                {type}
               </span>
             </div>
           </div>
@@ -173,21 +167,21 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
               )}
             </div>
 
-            {/* Species and Breed */}
+            {/* Type and Breed */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-gray-500 mb-2">Espécie</label>
                 {isEditing ? (
                   <select
-                    value={species}
-                    onChange={(e) => setSpecies(e.target.value)}
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="Cachorro">Cachorro</option>
                     <option value="Gato">Gato</option>
                   </select>
                 ) : (
-                  <p className="text-gray-900">{pet.species}</p>
+                  <p className="text-gray-900">{pet.type}</p>
                 )}
               </div>
               <div>
@@ -238,7 +232,7 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
               </div>
             </div>
 
-            {/* Size and Weight */}
+            {/* Size */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-gray-500 mb-2">Porte</label>
@@ -257,36 +251,6 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
                   <p className="text-gray-900">{pet.size || 'Não informado'}</p>
                 )}
               </div>
-              <div>
-                <label className="block text-sm text-gray-500 mb-2">Peso</label>
-                {isEditing ? (
-                  <Input
-                    type="text"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    className="w-full"
-                    placeholder="Ex: 15kg"
-                  />
-                ) : (
-                  <p className="text-gray-900">{pet.weight || 'Não informado'}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Color */}
-            <div>
-              <label className="block text-sm text-gray-500 mb-2">Cor</label>
-              {isEditing ? (
-                <Input
-                  type="text"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  className="w-full"
-                  placeholder="Ex: Marrom, Branco e preto"
-                />
-              ) : (
-                <p className="text-gray-900">{pet.color || 'Não informado'}</p>
-              )}
             </div>
 
             {/* Personality */}
