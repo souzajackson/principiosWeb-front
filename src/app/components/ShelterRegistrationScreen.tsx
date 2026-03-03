@@ -4,10 +4,12 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { createShelter } from '@/services/ShelterService';
+import { ApiError } from '@/lib/api';
 
 interface ShelterRegistrationScreenProps {
   onComplete: (shelterData: {
-    shelterName: string;
+    name: string;
     address: string;
     phone: string;
   }) => void;
@@ -15,13 +17,29 @@ interface ShelterRegistrationScreenProps {
 }
 
 export function ShelterRegistrationScreen({ onComplete, onBack }: ShelterRegistrationScreenProps) {
-  const [shelterName, setShelterName] = useState('');
+  const [name, setShelterName] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onComplete({ shelterName, address, phone });
+    setErrorMsg(null);
+
+    try {
+      setIsSubmitting(true);
+
+      await createShelter({ name, phone, address });
+      onComplete({ name, address, phone });
+    } catch (err) {
+      if (err instanceof ApiError) setErrorMsg(err.message);
+      else if (err instanceof Error) setErrorMsg(err.message);
+      else setErrorMsg('Falha ao criar conta.');
+    } finally {
+      setIsSubmitting(false);
+    }
+    e.preventDefault();
   };
 
   return (
@@ -92,7 +110,7 @@ export function ShelterRegistrationScreen({ onComplete, onBack }: ShelterRegistr
                   id="shelterName"
                   type="text"
                   placeholder="Ex: Lar dos Bichos"
-                  value={shelterName}
+                  value={name}
                   onChange={(e) => setShelterName(e.target.value)}
                   className="pl-10"
                   required
