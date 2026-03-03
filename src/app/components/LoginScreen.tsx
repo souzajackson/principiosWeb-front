@@ -5,12 +5,11 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Separator } from './ui/separator';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { login } from '@/services/AuthService';
 import { ApiError } from '@/lib/api';
 
 interface LoginScreenProps {
   onGoToSignup: () => void;
-  onLogin: () => void;
+  onLogin: (email: string, password: string) => Promise<void>;
 }
 
 export function LoginScreen({ onGoToSignup, onLogin }: LoginScreenProps) {
@@ -27,8 +26,7 @@ export function LoginScreen({ onGoToSignup, onLogin }: LoginScreenProps) {
 
     try {
       setIsSubmitting(true);
-      await login({ email, password }); // salva token no localStorage
-      onLogin();
+      await onLogin(email, password);
     } catch (err) {
       if (err instanceof ApiError) setErrorMsg(err.message);
       else if (err instanceof Error) setErrorMsg(err.message);
