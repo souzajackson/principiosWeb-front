@@ -27,7 +27,7 @@ export function AdoptionConfirmModal({ pet, onConfirm, onCancel }: AdoptionConfi
         <div className="p-6">
           <div className="flex items-center gap-4 mb-6 p-4 bg-purple-50 rounded-lg">
             <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-3xl">
-              {pet.type === 'dog' ? '🐕' : '🐱'}
+              {pet.type === 'Cachorro' ? '🐕' : '🐱'}
             </div>
             <div>
               <h3 className="text-lg text-gray-900">{pet.name}</h3>
