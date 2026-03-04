@@ -5,7 +5,7 @@ import type { AdoptionRequest } from './AdoptionRequestsScreen';
 
 interface AdoptionRequestDetailsScreenProps {
   petName: string;
-  requests: AdoptionRequest[];
+  requests?: AdoptionRequest[];
   onBack: () => void;
   onAcceptRequest: (requestId: string) => void;
   onRejectRequest: (requestId: string) => void;
@@ -107,7 +107,7 @@ function ConfirmModal({ isOpen, type, request, onConfirm, onCancel }: ConfirmMod
 
 export function AdoptionRequestDetailsScreen({
   petName,
-  requests,
+  requests = [],
   onBack,
   onAcceptRequest,
   onRejectRequest

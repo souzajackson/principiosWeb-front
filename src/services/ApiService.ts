@@ -1,12 +1,9 @@
 // src/services/apiService.ts
-// Funções tipadas para cada recurso do backend.
-// Usa o http() helper já existente em src/lib/api.ts
-
 import { http } from '../lib/api';
 
 const TOKEN_KEY = 'auth_token';
 
-// ─── Tipos espelhando o banco ─────────────────────────────────────────────────
+// ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export interface UserProfile {
   id: number;
@@ -79,14 +76,11 @@ export function setAuthToken(token: string): void {
 }
 
 export async function login(email: string, password: string) {
-
   const res = await http<LoginResponse>('/auth/login', {
     method: 'POST',
     body: { email, password },
     auth: false,
   });
-
-  // salva token automaticamente
   setAuthToken(res.token);
   return res;
 }
@@ -94,11 +88,7 @@ export async function login(email: string, password: string) {
 // ─── Users ────────────────────────────────────────────────────────────────────
 
 export function createUser(data: { name: string; email: string; password: string; role?: string }) {
-  return http<UserProfile>('/users', {
-    method: 'POST',
-    body: data,
-    auth: false,
-  });
+  return http<UserProfile>('/users', { method: 'POST', body: data, auth: false });
 }
 
 export function getUserById(id: number) {
@@ -106,10 +96,7 @@ export function getUserById(id: number) {
 }
 
 export function updateUser(id: number, data: Partial<UserProfile>) {
-  return http<{ message: string }>(`/users/${id}`, {
-    method: 'PUT',
-    body: data,
-  });
+  return http<{ message: string }>(`/users/${id}`, { method: 'PUT', body: data });
 }
 
 export function deleteUser(id: number) {
@@ -131,10 +118,7 @@ export function createShelter(data: Partial<Shelter>) {
 }
 
 export function updateShelter(id: number, data: Partial<Shelter>) {
-  return http<{ message: string }>(`/shelters/${id}`, {
-    method: 'PUT',
-    body: data,
-  });
+  return http<{ message: string }>(`/shelters/${id}`, { method: 'PUT', body: data });
 }
 
 export function deleteShelter(id: number) {
@@ -169,10 +153,7 @@ export function createAnimal(data: Omit<Animal, 'id'>) {
 }
 
 export function updateAnimal(id: number, data: Partial<Animal>) {
-  return http<{ message: string }>(`/animals/${id}`, {
-    method: 'PUT',
-    body: data,
-  });
+  return http<{ message: string }>(`/animals/${id}`, { method: 'PUT', body: data });
 }
 
 export function deleteAnimal(id: number) {
@@ -217,4 +198,14 @@ export function rejectAdoption(id: number) {
 
 export function deleteAdoption(id: number) {
   return http<{ message: string }>(`/adoptions/${id}`, { method: 'DELETE' });
+}
+
+// Retorna as adoções feitas pelo usuário logado
+export function getMyAdoptions() {
+  return http<Adoption[]>('/adoptions/my');
+}
+
+// Retorna as solicitações dos animais do abrigo logado
+export function getMyShelterAdoptions() {
+  return http<Adoption[]>('/adoptions/shelter');
 }
