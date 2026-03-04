@@ -481,7 +481,7 @@ export default function App() {
   if (currentScreen === 'request-details' && selectedPetRequests) {
     return (
       <AdoptionRequestDetailsScreen
-        petName={selectedPetRequests.petName}
+        petName={selectedPetRequests.name}
         requests={selectedPetRequests.requests}
         onBack={handleBackFromRequestDetails}
         onAcceptRequest={handleAcceptRequest}
