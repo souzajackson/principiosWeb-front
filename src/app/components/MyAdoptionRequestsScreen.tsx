@@ -2,7 +2,7 @@ import { Heart, ArrowLeft, User, LogOut, Calendar, Trash2, PawPrint, Clock } fro
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
-import { getMyAdoptions, deleteAdoption, type Adoption } from '../../services/ApiService';
+import { getMyAdoptions, deleteAdoption, getAnimalById, type Adoption, type Animal } from '../../services/ApiService';
 
 interface MyAdoptionRequestsScreenProps {
   onBack: () => void;
@@ -17,15 +17,32 @@ export function MyAdoptionRequestsScreen({ onBack, onLogout }: MyAdoptionRequest
   const [confirmCancelId, setConfirmCancelId] = useState<number | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Mapa animalId → Animal, carregado após buscar as adoções
+  const [animalsMap, setAnimalsMap] = useState<Record<number, Animal>>({});
+  const [animalsLoading, setAnimalsLoading] = useState(false);
+
   useEffect(() => {
     async function fetchAdoptions() {
       try {
         setLoading(true);
         setError(null);
-
         const data = await getMyAdoptions();
         setAdoptions(data);
 
+        // Busca todos os animais únicos em paralelo
+        const uniqueIds = [...new Set(data.map(a => a.animalId))];
+        if (uniqueIds.length > 0) {
+          setAnimalsLoading(true);
+          Promise.allSettled(uniqueIds.map(id => getAnimalById(id)))
+            .then(results => {
+              const map: Record<number, Animal> = {};
+              results.forEach((res, i) => {
+                if (res.status === 'fulfilled') map[uniqueIds[i]] = res.value;
+              });
+              setAnimalsMap(map);
+            })
+            .finally(() => setAnimalsLoading(false));
+        }
       } catch {
         setError('Não foi possível carregar suas solicitações. Tente novamente.');
       } finally {
@@ -142,114 +159,134 @@ export function MyAdoptionRequestsScreen({ onBack, onLogout }: MyAdoptionRequest
               </div>
             </div>
 
+            {/* Loading animais */}
+            {animalsLoading && (
+              <div className="flex items-center justify-center py-10">
+                <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+
             {/* Pending */}
-            {pendingAdoptions.length > 0 && (
+            {!animalsLoading && pendingAdoptions.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-2xl text-gray-900 mb-4">Aguardando Resposta</h3>
                 <div className="space-y-4">
-                  {pendingAdoptions.map((adoption) => (
-                    <div key={adoption.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
-                      <div className="p-6">
-                        <div className="flex flex-col md:flex-row gap-6">
-                          <div className="w-full md:w-32 h-32 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
-                            {adoption.animal?.image ? (
-                              <ImageWithFallback src={adoption.animal.image} alt={adoption.animal.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <PawPrint className="w-10 h-10 text-gray-400" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-3">
-                              <div>
-                                <h4 className="text-xl text-gray-900 mb-1">
-                                  {adoption.animal?.name ?? `Animal #${adoption.animalId}`}
-                                </h4>
-                                <p className="text-sm text-gray-600">
-                                  {[adoption.animal?.breed, adoption.animal?.age, adoption.animal?.gender].filter(Boolean).join(' • ')}
-                                </p>
-                              </div>
-                              <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">Pendente</span>
+                  {pendingAdoptions.map((adoption) => {
+                    const animal = animalsMap[adoption.animalId];
+                    return (
+                      <div key={adoption.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div className="p-6">
+                          <div className="flex flex-col md:flex-row gap-6">
+                            <div className="w-full md:w-32 h-32 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                              {animal?.image ? (
+                                <ImageWithFallback src={animal.image} alt={animal.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <PawPrint className="w-10 h-10 text-gray-400" />
+                                </div>
+                              )}
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                              <Calendar className="w-4 h-4" />
-                              <span>Solicitado em {formatDate(adoption.createdAt)}</span>
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <h4 className="text-xl text-gray-900 mb-1">
+                                    {animal?.name ?? `Animal #${adoption.animalId}`}
+                                  </h4>
+                                  <p className="text-sm text-gray-600">
+                                    {[animal?.breed, animal?.age, animal?.gender].filter(Boolean).join(' • ')}
+                                  </p>
+                                </div>
+                                <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">Pendente</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                                <Calendar className="w-4 h-4" />
+                                <span>Solicitado em {formatDate(adoption.date)}</span>
+                              </div>
+                              <Button
+                                onClick={() => setConfirmCancelId(adoption.id)}
+                                variant="outline"
+                                className="border-red-300 text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Cancelar Solicitação
+                              </Button>
                             </div>
-                            <Button
-                              onClick={() => setConfirmCancelId(adoption.id)}
-                              variant="outline"
-                              className="border-red-300 text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Cancelar Solicitação
-                            </Button>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Approved */}
-            {approvedAdoptions.length > 0 && (
+            {!animalsLoading && approvedAdoptions.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-2xl text-gray-900 mb-4">Solicitações Aceitas</h3>
                 <div className="space-y-4">
-                  {approvedAdoptions.map((adoption) => (
-                    <div key={adoption.id} className="bg-green-50 border border-green-200 rounded-xl overflow-hidden">
-                      <div className="p-6">
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
-                            {adoption.animal?.image ? (
-                              <ImageWithFallback src={adoption.animal.image} alt={adoption.animal.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <PawPrint className="w-8 h-8 text-gray-400" />
-                              </div>
-                            )}
+                  {approvedAdoptions.map((adoption) => {
+                    const animal = animalsMap[adoption.animalId];
+                    return (
+                      <div key={adoption.id} className="bg-green-50 border border-green-200 rounded-xl overflow-hidden">
+                        <div className="p-6">
+                          <div className="flex items-center gap-4 mb-4">
+                            <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                              {animal?.image ? (
+                                <ImageWithFallback src={animal.image} alt={animal.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <PawPrint className="w-8 h-8 text-gray-400" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="text-lg text-gray-900 mb-1">
+                                {animal?.name ?? `Animal #${adoption.animalId}`}
+                              </h4>
+                              <span className="px-3 py-1 bg-green-600 text-white rounded-full text-sm">✓ Aceita</span>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <h4 className="text-lg text-gray-900 mb-1">{adoption.animal?.name ?? `Animal #${adoption.animalId}`}</h4>
-                            <span className="px-3 py-1 bg-green-600 text-white rounded-full text-sm">✓ Aceita</span>
+                          <div className="bg-green-100 border border-green-300 rounded-lg p-3">
+                            <p className="text-sm text-green-800">
+                              🎉 <strong>Parabéns!</strong> Sua solicitação foi aceita! O abrigo entrará em contato em breve.
+                            </p>
                           </div>
-                        </div>
-                        <div className="bg-green-100 border border-green-300 rounded-lg p-3">
-                          <p className="text-sm text-green-800">
-                            🎉 <strong>Parabéns!</strong> Sua solicitação foi aceita! O abrigo entrará em contato em breve.
-                          </p>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Rejected */}
-            {rejectedAdoptions.length > 0 && (
+            {!animalsLoading && rejectedAdoptions.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-2xl text-gray-900 mb-4">Solicitações Recusadas</h3>
                 <div className="space-y-4">
-                  {rejectedAdoptions.map((adoption) => (
-                    <div key={adoption.id} className="bg-gray-100 border border-gray-300 rounded-xl overflow-hidden opacity-60">
-                      <div className="p-6 flex items-center gap-4">
-                        <PawPrint className="w-6 h-6 text-gray-500" />
-                        <div className="flex-1">
-                          <h4 className="text-lg text-gray-900">{adoption.animal?.name ?? `Animal #${adoption.animalId}`}</h4>
+                  {rejectedAdoptions.map((adoption) => {
+                    const animal = animalsMap[adoption.animalId];
+                    return (
+                      <div key={adoption.id} className="bg-gray-100 border border-gray-300 rounded-xl overflow-hidden opacity-60">
+                        <div className="p-6 flex items-center gap-4">
+                          <PawPrint className="w-6 h-6 text-gray-500" />
+                          <div className="flex-1">
+                            <h4 className="text-lg text-gray-900">
+                              {animal?.name ?? `Animal #${adoption.animalId}`}
+                            </h4>
+                          </div>
+                          <span className="px-3 py-1 bg-red-600 text-white rounded-full text-sm">Recusada</span>
                         </div>
-                        <span className="px-3 py-1 bg-red-600 text-white rounded-full text-sm">Recusada</span>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Empty state */}
-            {adoptions.length === 0 && (
+            {!animalsLoading && adoptions.length === 0 && (
               <div className="bg-white rounded-xl shadow-sm p-12 text-center">
                 <PawPrint className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500 mb-2">Você ainda não fez nenhuma solicitação de adoção</p>

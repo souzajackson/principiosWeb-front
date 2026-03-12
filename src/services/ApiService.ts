@@ -59,9 +59,8 @@ export interface Adoption {
   userId: number;
   animalId: number;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  createdAt?: string;
+  date?: string;       // ← era createdAt
   animal?: Animal;
-  user?: UserProfile;
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────

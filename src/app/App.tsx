@@ -9,7 +9,7 @@ import { SheltersScreen } from './components/SheltersScreen';
 import { ShelterDetailsScreen } from './components/ShelterDetailsScreen';
 import { ScheduleVisitModal, type Shelter } from './components/ScheduleVisitModal';
 import { ProfileScreen } from './components/ProfileScreen';
-import { AdoptionRequestsScreen, type AdoptionRequest } from './components/AdoptionRequestsScreen';
+import { AdoptionRequestsScreen, type PetAdoptionGroup } from './components/AdoptionRequestsScreen'; // ← removido AdoptionRequest
 import { AdoptionRequestDetailsScreen } from './components/AdoptionRequestDetailsScreen';
 import { MyVisitsScreen } from './components/MyVisitsScreen';
 import { MyAdoptionRequestsScreen } from './components/MyAdoptionRequestsScreen';
@@ -39,8 +39,6 @@ import {
   deleteAnimal,
   createVisit,
   createAdoption,
-  approveAdoption,
-  rejectAdoption,
   type UserProfile as ApiUserProfile,
   type Animal,
 } from '../services/ApiService';
@@ -103,9 +101,10 @@ export default function App() {
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
   const [selectedShelter, setSelectedShelter] = useState<Shelter | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [selectedPetRequests, setSelectedPetRequests] = useState<{
-    petId: string; petName: string; requests: AdoptionRequest[];
-  } | null>(null);
+
+  // ← Antes era { petId, petName, requests: AdoptionRequest[] }
+  // Agora é o grupo completo vindo direto da API
+  const [selectedPetGroup, setSelectedPetGroup] = useState<PetAdoptionGroup | null>(null);
 
   // ─── Restaurar sessão ao abrir o app ────────────────────────────────────────
   useEffect(() => {
@@ -116,14 +115,12 @@ export default function App() {
 
     setAuthUser(saved);
 
-    // Busca perfil completo
     getUserById(saved.id)
       .then(profile => {
         setUserProfile(profile);
         setCurrentScreen(saved.role === 'SHELTER' ? 'shelter-dashboard' : 'home');
       })
       .catch(() => {
-        // Token expirado ou inválido — limpa sessão
         clearSession();
       });
   }, []);
@@ -141,18 +138,14 @@ export default function App() {
   const handleLogin = async (email: string, password: string) => {
     try {
       const { token } = await apiLogin(email, password);
-
-      // Salva token no localStorage (usado pelo http() automaticamente)
       saveToken(token);
 
-      // Decodifica o payload para obter id e role sem chamada extra
       const decoded = decodeTokenPayload(token);
       if (!decoded) throw new Error('Token inválido');
 
       saveUser(decoded);
       setAuthUser(decoded);
 
-      // Busca perfil completo
       const profile = await getUserById(decoded.id);
       setUserProfile(profile);
 
@@ -169,6 +162,7 @@ export default function App() {
     setUserProfile(null);
     setSelectedPet(null);
     setSelectedShelter(null);
+    setSelectedPetGroup(null);
     setShelterPets([]);
     setCurrentScreen('login');
   };
@@ -178,8 +172,7 @@ export default function App() {
   const handleGoToSignup  = () => setCurrentScreen('signup');
   const handleGoToLogin   = () => setCurrentScreen('login');
 
-  // Usuário comum
-  const handleSignupComplete = async (data: SignupData) => {
+  const handleSignupComplete = async (_data: SignupData) => {
     try {
       alert('Cadastro realizado! Faça login para continuar. ✅');
       setCurrentScreen('login');
@@ -189,7 +182,6 @@ export default function App() {
     }
   };
 
-  // Abrigo — etapa 1: guarda dados básicos e avança
   const handleProceedToShelter = (data: SignupData) => {
     setSignupData(data);
     setCurrentScreen('shelter-registration');
@@ -197,7 +189,6 @@ export default function App() {
 
   const handleBackToSignup = () => setCurrentScreen('signup');
 
-  // Abrigo — etapa 2: cria usuário + abrigo
   const handleShelterComplete = async (shelterData: {
     shelterName: string;
     address: string;
@@ -205,19 +196,14 @@ export default function App() {
   }) => {
     if (!signupData) return;
     try {
-      // 2. Faz login para obter token
       const { token } = await apiLogin(signupData.email, signupData.password);
-
-      // 3. Salva token ANTES de qualquer chamada autenticada
       saveToken(token);
 
-      // 4. Só agora decodifica e salva usuário
       const decoded = decodeTokenPayload(token);
       if (!decoded) throw new Error('Token inválido');
       saveUser(decoded);
       setAuthUser(decoded);
 
-      // 6. Busca perfil completo
       const profile = await getUserById(decoded.id);
       setUserProfile(profile);
       setSignupData(null);
@@ -298,7 +284,7 @@ export default function App() {
     }
   };
 
-  const handleGoToAddPet    = () => setCurrentScreen('add-pet');
+  const handleGoToAddPet     = () => setCurrentScreen('add-pet');
   const handleBackFromAddPet = () => setCurrentScreen('shelter-dashboard');
 
   const handleSaveNewPet = async (petData: Omit<Pet, 'id'>) => {
@@ -316,7 +302,7 @@ export default function App() {
         personality:  petData.personality,
         healthStatus: petData.healthStatus,
         description:  petData.description,
-        shelterId:    authUser!.id, // ID do abrigo logado
+        shelterId:    authUser!.id,
       });
       setShelterPets(prev => [...prev, animalToPet(created)]);
       setCurrentScreen('shelter-dashboard');
@@ -329,7 +315,7 @@ export default function App() {
 
   // ─── Shelter visit / schedule ─────────────────────────────────────────────────
 
-  const handleScheduleVisit = () => setShowScheduleModal(true);
+  const handleScheduleVisit  = () => setShowScheduleModal(true);
   const handleCancelSchedule = () => setShowScheduleModal(false);
 
   const handleConfirmVisit = async (date: string, time: string) => {
@@ -344,32 +330,10 @@ export default function App() {
     }
   };
 
-  // ─── Adoption request handlers ────────────────────────────────────────────────
-
-  const handleAcceptRequest = async (requestId: string) => {
-    try {
-      await approveAdoption(Number(requestId));
-      alert('Solicitação aceita com sucesso! ✅');
-    } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Erro ao aceitar solicitação.';
-      alert(msg);
-    }
-  };
-
-  const handleRejectRequest = async (requestId: string) => {
-    try {
-      await rejectAdoption(Number(requestId));
-      alert('Solicitação recusada. O solicitante será notificado. ❌');
-    } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Erro ao recusar solicitação.';
-      alert(msg);
-    }
-  };
-
   // ─── Navigation helpers ───────────────────────────────────────────────────────
 
-  const handleGoToShelters = () => setCurrentScreen('shelters');
-  const handleBackToPets   = () => setCurrentScreen('home');
+  const handleGoToShelters  = () => setCurrentScreen('shelters');
+  const handleBackToPets    = () => setCurrentScreen('home');
 
   const handleSelectShelter = (shelter: Shelter) => {
     setSelectedShelter(shelter);
@@ -380,16 +344,14 @@ export default function App() {
     setCurrentScreen('shelters');
   };
 
-  const handleGoToProfile = () => setCurrentScreen('profile');
-  const handleBackFromProfile = () => {
+  const handleGoToProfile      = () => setCurrentScreen('profile');
+  const handleBackFromProfile  = () => {
     setCurrentScreen(authUser?.role === 'SHELTER' ? 'shelter-dashboard' : 'home');
   };
 
   const handleUpdateProfile = async (updatedProfile: ApiUserProfile) => {
     if (!authUser) return;
     try {
-      // O backend usa PUT /users/:id — envia só os campos editáveis
-      // (senha não deve ser alterada aqui; crie uma rota específica se necessário)
       await import('../lib/api').then(({ http }) =>
         http(`/users/${authUser.id}`, { method: 'PUT', body: updatedProfile })
       );
@@ -401,34 +363,32 @@ export default function App() {
     }
   };
 
-  const handleGoToRequests        = () => setCurrentScreen('adoption-requests');
-  const handleBackFromRequests    = () => setCurrentScreen('profile');
-  const handleGoToMyVisits        = () => setCurrentScreen('my-visits');
-  const handleBackFromMyVisits    = () => setCurrentScreen('profile');
-  const handleGoToMyAdoptions     = () => setCurrentScreen('my-adoptions');
-  const handleBackFromMyAdoptions = () => setCurrentScreen('profile');
-  const handleGoToShelterVisits   = () => setCurrentScreen('shelter-visits');
+  const handleGoToRequests          = () => setCurrentScreen('adoption-requests');
+  const handleBackFromRequests      = () => setCurrentScreen('profile');
+  const handleGoToMyVisits          = () => setCurrentScreen('my-visits');
+  const handleBackFromMyVisits      = () => setCurrentScreen('profile');
+  const handleGoToMyAdoptions       = () => setCurrentScreen('my-adoptions');
+  const handleBackFromMyAdoptions   = () => setCurrentScreen('profile');
+  const handleGoToShelterVisits     = () => setCurrentScreen('shelter-visits');
   const handleBackFromShelterVisits = () => setCurrentScreen('profile');
 
-  const handleSelectPetForRequests = (
-    petId: string, petName: string, requests: AdoptionRequest[]
-  ) => {
-    setSelectedPetRequests({ petId, petName, requests });
+  // ← Antes recebia (petId, petName, requests[]); agora recebe o grupo completo
+  const handleSelectPetGroup = (group: PetAdoptionGroup) => {
+    setSelectedPetGroup(group);
     setCurrentScreen('request-details');
   };
+
   const handleBackFromRequestDetails = () => {
-    setSelectedPetRequests(null);
+    setSelectedPetGroup(null);
     setCurrentScreen('adoption-requests');
   };
 
-  // ─── Adapta UserProfile do backend para o formato que ProfileScreen espera ───
-  // (ProfileScreen ainda usa a interface local com isShelter, phone, etc.)
-  // Enquanto o backend não retorna esses campos, usamos fallbacks.
+  // ─── Adapta UserProfile para ProfileScreen ────────────────────────────────────
   const profileScreenProps = userProfile
     ? {
         name:      userProfile.name,
         email:     userProfile.email,
-        phone:     '',           // adicione ao backend futuramente
+        phone:     '',
         address:   '',
         city:      '',
         state:     '',
@@ -478,14 +438,12 @@ export default function App() {
     return <MyVisitsScreen onBack={handleBackFromMyVisits} onLogout={handleLogout} />;
   }
 
-  if (currentScreen === 'request-details' && selectedPetRequests) {
+  // ← Agora passa group diretamente; aceite/recusa são feitos internamente no componente
+  if (currentScreen === 'request-details' && selectedPetGroup) {
     return (
       <AdoptionRequestDetailsScreen
-        petName={selectedPetRequests.petName}
-        requests={selectedPetRequests.requests}
+        group={selectedPetGroup}
         onBack={handleBackFromRequestDetails}
-        onAcceptRequest={handleAcceptRequest}
-        onRejectRequest={handleRejectRequest}
       />
     );
   }
@@ -494,7 +452,7 @@ export default function App() {
     return (
       <AdoptionRequestsScreen
         onBack={handleBackFromRequests}
-        onSelectPet={handleSelectPetForRequests}
+        onSelectPet={handleSelectPetGroup} // ← assinatura atualizada
         onLogout={handleLogout}
       />
     );
