@@ -178,8 +178,8 @@ export function MyAdoptionRequestsScreen({ onBack, onLogout }: MyAdoptionRequest
                         <div className="p-6">
                           <div className="flex flex-col md:flex-row gap-6">
                             <div className="w-full md:w-32 h-32 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
-                              {animal?.image ? (
-                                <ImageWithFallback src={animal.image} alt={animal.name} className="w-full h-full object-cover" />
+                              {animal?.imageUrl ? (
+                                <ImageWithFallback src={animal.imageUrl} alt={animal.name} className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
                                   <PawPrint className="w-10 h-10 text-gray-400" />
@@ -232,8 +232,8 @@ export function MyAdoptionRequestsScreen({ onBack, onLogout }: MyAdoptionRequest
                         <div className="p-6">
                           <div className="flex items-center gap-4 mb-4">
                             <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
-                              {animal?.image ? (
-                                <ImageWithFallback src={animal.image} alt={animal.name} className="w-full h-full object-cover" />
+                              {animal?.imageUrl ? (
+                                <ImageWithFallback src={animal.imageUrl} alt={animal.name} className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
                                   <PawPrint className="w-8 h-8 text-gray-400" />

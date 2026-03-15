@@ -54,7 +54,7 @@ export function AdoptionRequestsScreen({ onBack, onSelectPet, onLogout }: Adopti
         map.set(id, {
           animalId: id,
           animalName: adoption.animal?.name ?? `Animal #${id}`,
-          animalImage: adoption.animal?.image,
+          animalImage: adoption.animal?.photoUrl,
           animalBreed: adoption.animal?.breed,
           animalAge: adoption.animal?.age,
           adoptions: [],

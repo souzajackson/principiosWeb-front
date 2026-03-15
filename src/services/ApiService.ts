@@ -28,20 +28,24 @@ export interface Shelter {
 export interface Animal {
   id: number;
   name: string;
-  species: string;
+  type: string;
   breed?: string;
   age?: string;
   gender?: string;
   size?: string;
-  weight?: string;
-  color?: string;
-  image?: string;
-  shelterId: number;
-  shelter?: string;
-  location?: string;
+  photoUrl?: string;
+  description?: string;
   personality?: string;
   healthStatus?: string;
-  description?: string;
+  vaccinated?: boolean;
+  neutered?: boolean;
+  shelterName?: string;
+  shelterPhone?: string;
+  shelterEmail?: string;
+  weight?: string;
+  color?: string;
+  shelterId: number;
+  location?: string;
 }
 
 export interface Visit {
