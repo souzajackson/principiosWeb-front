@@ -8,6 +8,12 @@ export interface UserProfile {
   name: string;
   email: string;
   role: UserRole;
+  shelterData?: {
+    id: number,
+    name: string;
+    address: string;
+    phone: string;
+  };
 }
 
 export interface CreateUserRequest {

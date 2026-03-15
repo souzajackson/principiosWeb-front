@@ -1,28 +1,21 @@
-import { Heart, ArrowLeft, User, Mail, Phone, MapPin, Building2, Calendar, Edit2, Save, X, FileText, CalendarDays } from 'lucide-react';
+import {
+  Heart,
+  ArrowLeft,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Building2,
+  Edit2,
+  Save,
+  X,
+  FileText,
+  CalendarDays,
+} from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useState } from 'react';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  isShelter: boolean;
-  shelterData?: {
-    shelterName: string;
-    shelterAddress: string;
-    shelterCity: string;
-    shelterState: string;
-    shelterPhone: string;
-    shelterEmail: string;
-    description: string;
-    workingHours: string;
-    foundedYear: number;
-  };
-}
+import { UserProfile } from '@/services/UserService';
 
 interface ProfileScreenProps {
   userProfile: UserProfile;
@@ -34,48 +27,36 @@ interface ProfileScreenProps {
   onGoToMyAdoptions?: () => void;
 }
 
-export function ProfileScreen({ 
-  userProfile, 
-  onBack, 
-  onUpdateProfile, 
+export function ProfileScreen({
+  userProfile,
+  onBack,
+  onUpdateProfile,
   onGoToRequests,
   onGoToShelterVisits,
   onGoToMyVisits,
-  onGoToMyAdoptions
+  onGoToMyAdoptions,
 }: ProfileScreenProps) {
+  const isShelter = userProfile.role === 'SHELTER';
+
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
   const [isEditingShelter, setIsEditingShelter] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<UserProfile | null>(null);
 
-  // Personal info state
   const [name, setName] = useState(userProfile.name);
   const [email, setEmail] = useState(userProfile.email);
-  const [phone, setPhone] = useState(userProfile.phone);
-  const [address, setAddress] = useState(userProfile.address);
-  const [city, setCity] = useState(userProfile.city);
-  const [state, setState] = useState(userProfile.state);
 
-  // Shelter info state
-  const [shelterName, setShelterName] = useState(userProfile.shelterData?.shelterName || '');
-  const [shelterAddress, setShelterAddress] = useState(userProfile.shelterData?.shelterAddress || '');
-  const [shelterCity, setShelterCity] = useState(userProfile.shelterData?.shelterCity || '');
-  const [shelterState, setShelterState] = useState(userProfile.shelterData?.shelterState || '');
-  const [shelterPhone, setShelterPhone] = useState(userProfile.shelterData?.shelterPhone || '');
-  const [shelterEmail, setShelterEmail] = useState(userProfile.shelterData?.shelterEmail || '');
-  const [description, setDescription] = useState(userProfile.shelterData?.description || '');
-  const [workingHours, setWorkingHours] = useState(userProfile.shelterData?.workingHours || '');
-  const [foundedYear, setFoundedYear] = useState(userProfile.shelterData?.foundedYear || new Date().getFullYear());
+  const [shelterName, setShelterName] = useState(userProfile.shelterData?.name || '');
+  const [shelterAddress, setShelterAddress] = useState(userProfile.shelterData?.address || '');
+  const [shelterPhone, setShelterPhone] = useState(userProfile.shelterData?.phone || '');
+  const [shelterId, setShelterId] = useState(userProfile.shelterData?.id || '');
+
 
   const handleSavePersonal = () => {
     const updatedProfile: UserProfile = {
       ...userProfile,
       name,
       email,
-      phone,
-      address,
-      city,
-      state,
     };
     setPendingChanges(updatedProfile);
     setShowConfirmModal(true);
@@ -85,24 +66,19 @@ export function ProfileScreen({
     const updatedProfile: UserProfile = {
       ...userProfile,
       shelterData: {
-        shelterName,
-        shelterAddress,
-        shelterCity,
-        shelterState,
-        shelterPhone,
-        shelterEmail,
-        description,
-        workingHours,
-        foundedYear,
+        id: Number(shelterId),
+        name: shelterName,
+        address: shelterAddress,
+        phone: shelterPhone,
       },
     };
     setPendingChanges(updatedProfile);
     setShowConfirmModal(true);
   };
 
-  const handleConfirmSave = () => {
+  const handleConfirmSave = async () => {
     if (pendingChanges) {
-      onUpdateProfile(pendingChanges);
+      await onUpdateProfile(pendingChanges);
       setShowConfirmModal(false);
       setIsEditingPersonal(false);
       setIsEditingShelter(false);
@@ -111,33 +87,17 @@ export function ProfileScreen({
   };
 
   const handleCancelEdit = () => {
-    // Reset to original values
     setName(userProfile.name);
     setEmail(userProfile.email);
-    setPhone(userProfile.phone);
-    setAddress(userProfile.address);
-    setCity(userProfile.city);
-    setState(userProfile.state);
-    
-    if (userProfile.shelterData) {
-      setShelterName(userProfile.shelterData.shelterName);
-      setShelterAddress(userProfile.shelterData.shelterAddress);
-      setShelterCity(userProfile.shelterData.shelterCity);
-      setShelterState(userProfile.shelterData.shelterState);
-      setShelterPhone(userProfile.shelterData.shelterPhone);
-      setShelterEmail(userProfile.shelterData.shelterEmail);
-      setDescription(userProfile.shelterData.description);
-      setWorkingHours(userProfile.shelterData.workingHours);
-      setFoundedYear(userProfile.shelterData.foundedYear);
-    }
-    
+    setShelterName(userProfile.shelterData?.name || '');
+    setShelterAddress(userProfile.shelterData?.address || '');
+    setShelterPhone(userProfile.shelterData?.phone || '');
     setIsEditingPersonal(false);
     setIsEditingShelter(false);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16">
@@ -148,37 +108,37 @@ export function ProfileScreen({
               <ArrowLeft className="w-5 h-5" />
               <span>Voltar</span>
             </button>
+
             <div className="flex-1 flex items-center justify-center gap-2">
               <Heart className="w-6 h-6 text-purple-600" fill="currentColor" />
               <h1 className="text-xl text-purple-600">PetConnect</h1>
             </div>
+
             <div className="w-24"></div>
           </div>
         </div>
       </header>
 
-      {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Profile Header */}
         <div className="bg-gradient-to-r from-purple-600 to-pink-500 rounded-2xl p-8 mb-8 text-white">
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
-              {userProfile.isShelter ? (
+              {isShelter ? (
                 <Building2 className="w-10 h-10 text-purple-600" />
               ) : (
                 <User className="w-10 h-10 text-purple-600" />
               )}
             </div>
+
             <div className="flex-1">
               <h2 className="text-3xl mb-1">{userProfile.name}</h2>
               <p className="text-purple-100">
-                {userProfile.isShelter ? '🏢 Conta de Abrigo' : '👤 Usuário'}
+                {isShelter ? '🏢 Conta de Abrigo' : '👤 Usuário'}
               </p>
             </div>
           </div>
-          
-          {/* Action Buttons */}
-          {userProfile.isShelter ? (
+
+          {isShelter ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
               {onGoToRequests && (
                 <Button
@@ -223,7 +183,6 @@ export function ProfileScreen({
           )}
         </div>
 
-        {/* Personal Information Section */}
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-2xl text-gray-900">Informações Pessoais</h3>
@@ -240,7 +199,6 @@ export function ProfileScreen({
           </div>
 
           <div className="space-y-4">
-            {/* Name */}
             <div>
               <label className="block text-sm text-gray-500 mb-2">Nome Completo</label>
               {isEditingPersonal ? (
@@ -258,7 +216,6 @@ export function ProfileScreen({
               )}
             </div>
 
-            {/* Email */}
             <div>
               <label className="block text-sm text-gray-500 mb-2">E-mail</label>
               {isEditingPersonal ? (
@@ -275,83 +232,8 @@ export function ProfileScreen({
                 </div>
               )}
             </div>
-
-            {/* Phone */}
-            <div>
-              <label className="block text-sm text-gray-500 mb-2">Telefone</label>
-              {isEditingPersonal ? (
-                <Input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full"
-                  placeholder="(00) 00000-0000"
-                />
-              ) : (
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Phone className="w-5 h-5 text-purple-600" />
-                  <span className="text-gray-900">{userProfile.phone || 'Não informado'}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Address */}
-            <div>
-              <label className="block text-sm text-gray-500 mb-2">Endereço</label>
-              {isEditingPersonal ? (
-                <Input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full"
-                  placeholder="Rua, número, complemento"
-                />
-              ) : (
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <MapPin className="w-5 h-5 text-purple-600" />
-                  <span className="text-gray-900">{userProfile.address || 'Não informado'}</span>
-                </div>
-              )}
-            </div>
-
-            {/* City and State */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-500 mb-2">Cidade</label>
-                {isEditingPersonal ? (
-                  <Input
-                    type="text"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full"
-                  />
-                ) : (
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-900">{userProfile.city || 'Não informado'}</span>
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm text-gray-500 mb-2">Estado</label>
-                {isEditingPersonal ? (
-                  <Input
-                    type="text"
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    className="w-full"
-                    placeholder="UF"
-                    maxLength={2}
-                  />
-                ) : (
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-900">{userProfile.state || 'Não informado'}</span>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
 
-          {/* Action Buttons for Personal Info */}
           {isEditingPersonal && (
             <div className="flex gap-3 mt-6">
               <Button
@@ -373,14 +255,14 @@ export function ProfileScreen({
           )}
         </div>
 
-        {/* Shelter Information Section */}
-        {userProfile.isShelter && userProfile.shelterData && (
+        {isShelter && (
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <Building2 className="w-6 h-6 text-purple-600" />
                 <h3 className="text-2xl text-gray-900">Informações do Abrigo</h3>
               </div>
+
               {!isEditingShelter && !isEditingPersonal && (
                 <Button
                   onClick={() => setIsEditingShelter(true)}
@@ -394,7 +276,6 @@ export function ProfileScreen({
             </div>
 
             <div className="space-y-4">
-              {/* Shelter Name */}
               <div>
                 <label className="block text-sm text-gray-500 mb-2">Nome do Abrigo</label>
                 {isEditingShelter ? (
@@ -405,30 +286,13 @@ export function ProfileScreen({
                     className="w-full"
                   />
                 ) : (
-                  <div className="p-3 bg-purple-50 rounded-lg">
-                    <span className="text-gray-900">{userProfile.shelterData.shelterName}</span>
+                  <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                    <Building2 className="w-5 h-5 text-purple-600" />
+                    <span className="text-gray-900">{userProfile.shelterData?.name || 'Não informado'}</span>
                   </div>
                 )}
               </div>
 
-              {/* Shelter Description */}
-              <div>
-                <label className="block text-sm text-gray-500 mb-2">Descrição</label>
-                {isEditingShelter ? (
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full min-h-[100px] px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="Descreva o abrigo, sua missão e serviços..."
-                  />
-                ) : (
-                  <div className="p-3 bg-purple-50 rounded-lg">
-                    <span className="text-gray-900">{userProfile.shelterData.description}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Shelter Address */}
               <div>
                 <label className="block text-sm text-gray-500 mb-2">Endereço do Abrigo</label>
                 {isEditingShelter ? (
@@ -439,120 +303,31 @@ export function ProfileScreen({
                     className="w-full"
                   />
                 ) : (
-                  <div className="p-3 bg-purple-50 rounded-lg">
-                    <span className="text-gray-900">{userProfile.shelterData.shelterAddress}</span>
+                  <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                    <MapPin className="w-5 h-5 text-purple-600" />
+                    <span className="text-gray-900">{userProfile.shelterData?.address || 'Não informado'}</span>
                   </div>
                 )}
               </div>
 
-              {/* Shelter City and State */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-500 mb-2">Cidade</label>
-                  {isEditingShelter ? (
-                    <Input
-                      type="text"
-                      value={shelterCity}
-                      onChange={(e) => setShelterCity(e.target.value)}
-                      className="w-full"
-                    />
-                  ) : (
-                    <div className="p-3 bg-purple-50 rounded-lg">
-                      <span className="text-gray-900">{userProfile.shelterData.shelterCity}</span>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-500 mb-2">Estado</label>
-                  {isEditingShelter ? (
-                    <Input
-                      type="text"
-                      value={shelterState}
-                      onChange={(e) => setShelterState(e.target.value)}
-                      className="w-full"
-                      maxLength={2}
-                    />
-                  ) : (
-                    <div className="p-3 bg-purple-50 rounded-lg">
-                      <span className="text-gray-900">{userProfile.shelterData.shelterState}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Shelter Contact */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-500 mb-2">Telefone do Abrigo</label>
-                  {isEditingShelter ? (
-                    <Input
-                      type="tel"
-                      value={shelterPhone}
-                      onChange={(e) => setShelterPhone(e.target.value)}
-                      className="w-full"
-                    />
-                  ) : (
-                    <div className="p-3 bg-purple-50 rounded-lg">
-                      <span className="text-gray-900">{userProfile.shelterData.shelterPhone}</span>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-500 mb-2">E-mail do Abrigo</label>
-                  {isEditingShelter ? (
-                    <Input
-                      type="email"
-                      value={shelterEmail}
-                      onChange={(e) => setShelterEmail(e.target.value)}
-                      className="w-full"
-                    />
-                  ) : (
-                    <div className="p-3 bg-purple-50 rounded-lg">
-                      <span className="text-gray-900">{userProfile.shelterData.shelterEmail}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Working Hours and Founded Year */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-500 mb-2">Horário de Funcionamento</label>
-                  {isEditingShelter ? (
-                    <Input
-                      type="text"
-                      value={workingHours}
-                      onChange={(e) => setWorkingHours(e.target.value)}
-                      className="w-full"
-                      placeholder="Ex: Segunda a Sábado, 9h às 18h"
-                    />
-                  ) : (
-                    <div className="p-3 bg-purple-50 rounded-lg">
-                      <span className="text-gray-900">{userProfile.shelterData.workingHours}</span>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-500 mb-2">Ano de Fundação</label>
-                  {isEditingShelter ? (
-                    <Input
-                      type="number"
-                      value={foundedYear}
-                      onChange={(e) => setFoundedYear(parseInt(e.target.value))}
-                      className="w-full"
-                      min={1900}
-                      max={new Date().getFullYear()}
-                    />
-                  ) : (
-                    <div className="p-3 bg-purple-50 rounded-lg">
-                      <span className="text-gray-900">{userProfile.shelterData.foundedYear}</span>
-                    </div>
-                  )}
-                </div>
+              <div>
+                <label className="block text-sm text-gray-500 mb-2">Telefone do Abrigo</label>
+                {isEditingShelter ? (
+                  <Input
+                    type="tel"
+                    value={shelterPhone}
+                    onChange={(e) => setShelterPhone(e.target.value)}
+                    className="w-full"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                    <Phone className="w-5 h-5 text-purple-600" />
+                    <span className="text-gray-900">{userProfile.shelterData?.phone || 'Não informado'}</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Action Buttons for Shelter Info */}
             {isEditingShelter && (
               <div className="flex gap-3 mt-6">
                 <Button
@@ -576,7 +351,6 @@ export function ProfileScreen({
         )}
       </div>
 
-      {/* Confirmation Modal */}
       {showConfirmModal && pendingChanges && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">

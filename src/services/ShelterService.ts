@@ -7,13 +7,7 @@ export interface Shelter {
   id: number;
   name: string;
   address: string;
-  city?: string;
-  state?: string;
-  phone?: string;
-  email?: string;
-  description?: string;
-  workingHours?: string;
-  foundedYear?: number;
+  phone: string;
 }
 
 export interface CreateShelterRequest {
@@ -38,14 +32,16 @@ export async function createShelter(payload: CreateShelterRequest): Promise<Crea
   });
 }
 
-
-
 export function getAllShelters() {
   return http<Shelter[]>('/shelters', { auth: false });
 }
 
 export function getShelterById(id: number) {
   return http<Shelter>(`/shelters/${id}`, { auth: false });
+}
+
+export function getMyShelter() {
+  return http<Shelter>(`/shelters/me`);
 }
 
 export function updateShelter(id: number, data: Partial<Shelter>) {

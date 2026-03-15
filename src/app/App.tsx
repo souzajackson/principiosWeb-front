@@ -35,6 +35,7 @@ import { createVisit } from '@/services/VisitService';
 import { createAdoption } from '@/services/AdoptionService';
 import { AddAnimalScreen } from './components/AddAnimalScreen';
 import { ManageAnimalScreen } from './components/ManageAnimalScreen';
+import { getMyShelter, updateShelter } from '@/services/ShelterService';
 
 // ─── Tipos locais ─────────────────────────────────────────────────────────────
 
@@ -76,24 +77,44 @@ export default function App() {
   // Agora é o grupo completo vindo direto da API
   const [selectedAnimalGroup, setSelectedAnimalGroup] = useState<AnimalAdoptionGroup | null>(null);
 
+  const loadCompleteUserProfile = async (user: AuthUser): Promise<UserProfile> => {
+  const baseProfile = await getUserById(user.id);
+
+  if (user.role !== 'SHELTER') {
+    return baseProfile;
+  }
+
+  const shelter = await getMyShelter();
+
+  return {
+    ...baseProfile,
+    shelterData: {
+      id: shelter.id,
+      name: shelter.name,
+      address: shelter.address,
+      phone: shelter.phone,
+    },
+  };
+};
+
   // ─── Restaurar sessão ao abrir o app ────────────────────────────────────────
   useEffect(() => {
-    if (!isLoggedIn()) return;
+  if (!isLoggedIn()) return;
 
-    const saved = getSavedUser();
-    if (!saved) return;
+  const saved = getSavedUser();
+  if (!saved) return;
 
-    setAuthUser(saved);
+  setAuthUser(saved);
 
-    getUserById(saved.id)
-      .then(profile => {
-        setUserProfile(profile);
-        setCurrentScreen(saved.role === 'SHELTER' ? 'shelter-dashboard' : 'home');
-      })
-      .catch(() => {
-        clearSession();
-      });
-  }, []);
+  loadCompleteUserProfile(saved)
+    .then(profile => {
+      setUserProfile(profile);
+      setCurrentScreen(saved.role === 'SHELTER' ? 'shelter-dashboard' : 'home');
+    })
+    .catch(() => {
+      clearSession();
+    });
+}, []);
 
   // ─── Carregar Animals do abrigo quando chega no dashboard ───────────────────────
   useEffect(() => {
@@ -107,25 +128,25 @@ export default function App() {
   // ─── Auth handlers ───────────────────────────────────────────────────────────
 
   const handleLogin = async (email: string, password: string) => {
-    try {
-      const { token } = await login(email, password);
-      saveToken(token);
+  try {
+    const { token } = await login(email, password);
+    saveToken(token);
 
-      const decoded = decodeTokenPayload(token);
-      if (!decoded) throw new Error('Token inválido');
+    const decoded = decodeTokenPayload(token);
+    if (!decoded) throw new Error('Token inválido');
 
-      saveUser(decoded);
-      setAuthUser(decoded);
+    saveUser(decoded);
+    setAuthUser(decoded);
 
-      const profile = await getUserById(decoded.id);
-      setUserProfile(profile);
+    const profile = await loadCompleteUserProfile(decoded);
+    setUserProfile(profile);
 
-      setCurrentScreen(decoded.role === 'SHELTER' ? 'shelter-dashboard' : 'home');
-    } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Erro ao fazer login.';
-      alert(msg);
-    }
-  };
+    setCurrentScreen(decoded.role === 'SHELTER' ? 'shelter-dashboard' : 'home');
+  } catch (err) {
+    const msg = err instanceof ApiError ? err.message : 'Erro ao fazer login.';
+    alert(msg);
+  }
+};
 
   const handleLogout = () => {
     clearSession();
@@ -161,24 +182,25 @@ export default function App() {
   const handleBackToSignup = () => setCurrentScreen('signup');
 
   const handleShelterComplete = async () => {
-    if (!signupData) return;
-    try {
-      const { token } = await login(signupData.email, signupData.password);
-      saveToken(token);
+  if (!signupData) return;
+  try {
+    const { token } = await login(signupData.email, signupData.password);
+    saveToken(token);
+    const decoded = decodeTokenPayload(token);
+    if (!decoded) throw new Error('Token inválido');
+    console.log("here", decoded)
+    saveUser(decoded);
+    setAuthUser(decoded);
 
-      const decoded = decodeTokenPayload(token);
-      if (!decoded) throw new Error('Token inválido');
-      saveUser(decoded);
-      setAuthUser(decoded);
+    const profile = await loadCompleteUserProfile(decoded);
+    setUserProfile(profile);
 
-      const profile = await getUserById(decoded.id);
-      setUserProfile(profile);
-      setSignupData(null);
-      setCurrentScreen('shelter-dashboard');
-    } catch (err) {
-      alert(err instanceof ApiError ? err.message : 'Erro ao cadastrar abrigo.');
-    }
-  };
+    setSignupData(null);
+    setCurrentScreen('shelter-dashboard');
+  } catch (err) {
+    alert(err instanceof ApiError ? err.message : 'Erro ao cadastrar abrigo.');
+  }
+};
 
   // ─── Animal handlers ─────────────────────────────────────────────────────────────
 
@@ -316,19 +338,42 @@ export default function App() {
     setCurrentScreen(authUser?.role === 'SHELTER' ? 'shelter-dashboard' : 'home');
   };
 
-  const handleUpdateProfile = async (updatedProfile: UserProfile) => {
-    if (!authUser) return;
-    try {
-      await import('../lib/api').then(({ http }) =>
-        http(`/users/${authUser.id}`, { method: 'PUT', body: updatedProfile })
-      );
-      setUserProfile(updatedProfile);
-      alert('Perfil atualizado com sucesso! ✅');
-    } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Erro ao atualizar perfil.';
-      alert(msg);
+const handleUpdateProfile = async (updatedProfile: UserProfile) => {
+  if (!authUser) return;
+
+  try {
+    const { http } = await import('../lib/api');
+
+    await http(`/users/${authUser.id}`, {
+      method: 'PUT',
+      body: {
+        name: updatedProfile.name,
+        email: updatedProfile.email,
+        role: updatedProfile.role,
+      },
+    });
+
+    if (
+      authUser.role === 'SHELTER' &&
+      updatedProfile.shelterData &&
+      updatedProfile.shelterData.id != null
+    ) {
+      await updateShelter(updatedProfile.shelterData.id, {
+        name: updatedProfile.shelterData.name,
+        address: updatedProfile.shelterData.address,
+        phone: updatedProfile.shelterData.phone,
+      });
     }
-  };
+
+    const refreshedProfile = await loadCompleteUserProfile(authUser);
+    setUserProfile(refreshedProfile);
+
+    alert('Perfil atualizado com sucesso! ✅');
+  } catch (err) {
+    const msg = err instanceof ApiError ? err.message : 'Erro ao atualizar perfil.';
+    alert(msg);
+  }
+};
 
   const handleGoToRequests          = () => setCurrentScreen('adoption-requests');
   const handleBackFromRequests      = () => setCurrentScreen('profile');
@@ -349,22 +394,6 @@ export default function App() {
     setSelectedAnimalGroup(null);
     setCurrentScreen('adoption-requests');
   };
-
-  // ─── Adapta UserProfile para ProfileScreen ────────────────────────────────────
-  const profileScreenProps = userProfile
-    ? {
-        name:      userProfile.name,
-        email:     userProfile.email,
-        phone:     '',
-        address:   '',
-        city:      '',
-        state:     '',
-        role:      userProfile.role,
-        isShelter: userProfile.role === 'SHELTER',
-      }
-    : null;
-
-  // ─── Render ───────────────────────────────────────────────────────────────────
 
   if (currentScreen === 'add-Animal') {
     return <AddAnimalScreen onBack={handleBackFromAddAnimal} onSave={handleSaveNewAnimal} />;
@@ -425,10 +454,10 @@ export default function App() {
     );
   }
 
-  if (currentScreen === 'profile' && profileScreenProps) {
+  if (currentScreen === 'profile' && userProfile) {
     return (
       <ProfileScreen
-        userProfile={profileScreenProps}
+        userProfile={userProfile}
         onBack={handleBackFromProfile}
         onUpdateProfile={handleUpdateProfile}
         onGoToRequests={authUser?.role === 'SHELTER' ? handleGoToRequests : undefined}
