@@ -14,8 +14,8 @@ const mockShelters: Shelter[] = [
     state: 'SP',
     phone: '(11) 98765-4321',
     email: 'contato@patinhasfelizes.org.br',
-    description: 'O Abrigo Patinhas Felizes é uma organização sem fins lucrativos dedicada ao resgate, cuidado e adoção responsável de animais abandonados. Com mais de 15 anos de experiência, já ajudamos milhares de pets a encontrarem lares amorosos. Nossa equipe de veterinários e voluntários trabalha incansavelmente para garantir o bem-estar de cada animal.',
-    imageUrl: 'https://images.unsplash.com/photo-1591322447626-589ac8ad0c29?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjBzaGVsdGVyJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzcyMDU2MzM1fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+    description: 'O Abrigo Patinhas Felizes é uma organização sem fins lucrativos dedicada ao resgate, cuidado e adoção responsável de animais abandonados. Com mais de 15 anos de experiência, já ajudamos milhares de animals a encontrarem lares amorosos. Nossa equipe de veterinários e voluntários trabalha incansavelmente para garantir o bem-estar de cada animal.',
+    photoUrl: 'https://images.unsplash.com/photo-1591322447626-589ac8ad0c29?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjBzaGVsdGVyJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzcyMDU2MzM1fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     animalsCount: 87,
     availableDogs: 45,
     availableCats: 42,
@@ -31,7 +31,7 @@ const mockShelters: Shelter[] = [
     phone: '(21) 97654-3210',
     email: 'adocao@casadosgatos.com.br',
     description: 'Somos um abrigo especializado no resgate e adoção de gatos. Nossa missão é proporcionar um ambiente seguro e acolhedor para felinos abandonados ou resgatados. Oferecemos cuidados veterinários completos, incluindo vacinação, castração e tratamento de doenças. Todos os nossos gatos são socializados e preparados para a vida em família.',
-    imageUrl: 'https://images.unsplash.com/photo-1763130063654-667be23d5c4c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjBjYXJlJTIwY2VudGVyfGVufDF8fHx8MTc3MjE1OTU5NXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+    photoUrl: 'https://images.unsplash.com/photo-1763130063654-667be23d5c4c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjBjYXJlJTIwY2VudGVyfGVufDF8fHx8MTc3MjE1OTU5NXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     animalsCount: 62,
     availableDogs: 8,
     availableCats: 54,
@@ -47,7 +47,7 @@ const mockShelters: Shelter[] = [
     phone: '(31) 96543-2109',
     email: 'refugio@animalbh.org.br',
     description: 'O Refúgio Animal BH é uma instituição comprometida com a causa animal. Resgatamos, reabilitamos e encaminhamos para adoção cães e gatos de todas as idades e raças. Contamos com instalações modernas, área de recreação e uma equipe dedicada de profissionais e voluntários. Promovemos também campanhas de conscientização sobre posse responsável.',
-    imageUrl: 'https://images.unsplash.com/photo-1699791910411-6c9ea7f47b3a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBidWlsZGluZyUyMGZhY2FkZXxlbnwxfHx8fDE3NzIwOTgzMDB8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+    photoUrl: 'https://images.unsplash.com/photo-1699791910411-6c9ea7f47b3a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBidWlsZGluZyUyMGZhY2FkZXxlbnwxfHx8fDE3NzIwOTgzMDB8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     animalsCount: 103,
     availableDogs: 58,
     availableCats: 45,
@@ -63,7 +63,7 @@ const mockShelters: Shelter[] = [
     phone: '(41) 95432-1098',
     email: 'adocao@lardosbichos.com.br',
     description: 'O Lar dos Bichos é mais do que um abrigo, é um verdadeiro lar temporário para animais que esperam por uma segunda chance. Oferecemos atendimento veterinário gratuito, programa de apadrinhamento e feiras de adoção mensais. Nossa filosofia é baseada no amor, respeito e cuidado individualizado para cada animal.',
-    imageUrl: 'https://images.unsplash.com/photo-1771607500173-c87fcddc5fcf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb21tdW5pdHklMjBjZW50ZXIlMjBidWlsZGluZ3xlbnwxfHx8fDE3NzIxMTM3OTN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+    photoUrl: 'https://images.unsplash.com/photo-1771607500173-c87fcddc5fcf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb21tdW5pdHklMjBjZW50ZXIlMjBidWlsZGluZ3xlbnwxfHx8fDE3NzIxMTM3OTN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     animalsCount: 95,
     availableDogs: 52,
     availableCats: 43,
@@ -79,7 +79,7 @@ const mockShelters: Shelter[] = [
     phone: '(51) 94321-0987',
     email: 'contato@protecaoanimal.org',
     description: 'A Proteção Animal é uma ONG que atua no resgate e proteção de animais em situação de risco. Mantemos um abrigo com capacidade para mais de 100 animais, todos recebendo alimentação adequada, cuidados médicos e muito amor. Trabalhamos em parceria com clínicas veterinárias e promovemos eventos de adoção regularmente.',
-    imageUrl: 'https://images.unsplash.com/photo-1770548037928-a29bfacc84ea?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwY2xpbmljJTIwZXh0ZXJpb3J8ZW58MXx8fHwxNzcyMTU5NTk4fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+    photoUrl: 'https://images.unsplash.com/photo-1770548037928-a29bfacc84ea?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwY2xpbmljJTIwZXh0ZXJpb3J8ZW58MXx8fHwxNzcyMTU5NTk4fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     animalsCount: 118,
     availableDogs: 63,
     availableCats: 55,
@@ -91,11 +91,11 @@ const mockShelters: Shelter[] = [
 interface SheltersScreenProps {
   onLogout: () => void;
   onSelectShelter: (shelter: Shelter) => void;
-  onBackToPets: () => void;
+  onBackToAnimals: () => void;
   onGoToProfile: () => void;
 }
 
-export function SheltersScreen({ onLogout, onSelectShelter, onBackToPets, onGoToProfile }: SheltersScreenProps) {
+export function SheltersScreen({ onLogout, onSelectShelter, onBackToAnimals, onGoToProfile }: SheltersScreenProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -135,16 +135,16 @@ export function SheltersScreen({ onLogout, onSelectShelter, onBackToPets, onGoTo
             {/* Logo */}
             <div className="flex items-center gap-2">
               <Heart className="w-8 h-8 text-purple-600" fill="currentColor" />
-              <h1 className="text-2xl text-purple-600">PetConnect</h1>
+              <h1 className="text-2xl text-purple-600">AnimalConnect</h1>
             </div>
 
             {/* Navigation */}
             <div className="hidden md:flex items-center gap-6">
               <button
-                onClick={onBackToPets}
+                onClick={onBackToAnimals}
                 className="text-gray-600 hover:text-purple-600 transition-colors"
               >
-                Pets
+                Animals
               </button>
               <button className="text-purple-600 border-b-2 border-purple-600 pb-1">
                 Abrigos
@@ -223,10 +223,10 @@ export function SheltersScreen({ onLogout, onSelectShelter, onBackToPets, onGoTo
           {/* Mobile Navigation */}
           <div className="md:hidden pb-4 flex gap-4">
             <button
-              onClick={onBackToPets}
+              onClick={onBackToAnimals}
               className="flex-1 py-2 text-gray-600 hover:text-purple-600 transition-colors"
             >
-              Pets
+              Animals
             </button>
             <button className="flex-1 py-2 text-purple-600 border-b-2 border-purple-600">
               Abrigos
@@ -348,12 +348,12 @@ export function SheltersScreen({ onLogout, onSelectShelter, onBackToPets, onGoTo
               {/* Shelter Image */}
               <div className="relative h-48 overflow-hidden bg-gray-200">
                 <ImageWithFallback
-                  src={shelter.imageUrl}
+                  src={shelter.photoUrl}
                   alt={shelter.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute top-3 right-3 px-3 py-1 bg-white rounded-full shadow-md">
-                  <span className="text-sm text-gray-700">{shelter.animalsCount} pets</span>
+                  <span className="text-sm text-gray-700">{shelter.animalsCount} animals</span>
                 </div>
               </div>
 

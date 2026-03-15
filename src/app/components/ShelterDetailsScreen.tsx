@@ -39,7 +39,7 @@ export function ShelterDetailsScreen({ shelter, onBack, onScheduleVisit }: Shelt
           <div className="space-y-4">
             <div className="relative rounded-2xl overflow-hidden shadow-lg bg-gray-200 aspect-[4/3]">
               <ImageWithFallback
-                src={shelter.imageUrl}
+                src={shelter.photoUrl}
                 alt={shelter.name}
                 className="w-full h-full object-cover"
               />

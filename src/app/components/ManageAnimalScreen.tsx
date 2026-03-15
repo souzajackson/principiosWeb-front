@@ -3,35 +3,37 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useState } from 'react';
-import type { Pet } from './PetDetailsScreen';
+import { Animal } from '@/services/AnimalService';
 
-interface ManagePetScreenProps {
-  pet: Pet;
+interface ManageAnimalScreenProps {
+  animal: Animal;
   onBack: () => void;
-  onUpdate: (pet: Pet) => void;
-  onDelete: (petId: string) => void;
+  onUpdate: (animal: Animal) => void;
+  onDelete: (animalId: Number) => void;
 }
 
-export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetScreenProps) {
+export function ManageAnimalScreen({ animal, onBack, onUpdate, onDelete }: ManageAnimalScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   
   // Edit state
-  const [name, setName] = useState(pet.name);
-  const [type, setType] = useState(pet.type);
-  const [breed, setBreed] = useState(pet.breed);
-  const [age, setAge] = useState(pet.age);
-  const [gender, setGender] = useState(pet.gender);
-  const [size, setSize] = useState(pet.size || '');
-  const [personality, setPersonality] = useState(pet.personality || '');
-  const [healthStatus, setHealthStatus] = useState(pet.healthStatus || '');
-  const [description, setDescription] = useState(pet.description || '');
+  const [photoUrl, setPhotoUrl] = useState(animal.photoUrl);
+  const [name, setName] = useState(animal.name);
+  const [species, setSpecies] = useState(animal.species);
+  const [breed, setBreed] = useState(animal.breed);
+  const [age, setAge] = useState(animal.age);
+  const [gender, setGender] = useState(animal.gender);
+  const [size, setSize] = useState(animal.size || '');
+  const [personality, setPersonality] = useState(animal.personality || '');
+  const [healthStatus, setHealthStatus] = useState(animal.healthStatus || '');
+  const [description, setDescription] = useState(animal.description || '');
 
   const handleSave = () => {
-    const updatedPet: Pet = {
-      ...pet,
+    const updatedAnimal: Animal = {
+      ...animal,
+      photoUrl,
       name,
-      type,
+      species,
       breed,
       age,
       gender,
@@ -41,26 +43,26 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
       description,
     };
     
-    onUpdate(updatedPet);
+    onUpdate(updatedAnimal);
     setIsEditing(false);
   };
 
   const handleCancel = () => {
     // Reset to original values
-    setName(pet.name);
-    setType(pet.type);
-    setBreed(pet.breed);
-    setAge(pet.age);
-    setGender(pet.gender);
-    setSize(pet.size || '');
-    setPersonality(pet.personality || '');
-    setHealthStatus(pet.healthStatus || '');
-    setDescription(pet.description || '');
+    setName(animal.name);
+    setSpecies(animal.species);
+    setBreed(animal.breed);
+    setAge(animal.age);
+    setGender(animal.gender);
+    setSize(animal.size || '');
+    setPersonality(animal.personality || '');
+    setHealthStatus(animal.healthStatus || '');
+    setDescription(animal.description || '');
     setIsEditing(false);
   };
 
   const handleDelete = () => {
-    onDelete(pet.id);
+    onDelete(animal.id);
   };
 
   return (
@@ -78,7 +80,7 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
             </button>
             <div className="flex-1 flex items-center justify-center gap-2">
               <Heart className="w-6 h-6 text-purple-600" fill="currentColor" />
-              <h1 className="text-xl text-purple-600">PetConnect</h1>
+              <h1 className="text-xl text-purple-600">AnimalConnect</h1>
             </div>
             <div className="w-24"></div>
           </div>
@@ -87,17 +89,17 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Pet Image */}
+        {/* Animal Image */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">
           <div className="h-96 bg-gray-200 relative">
             <ImageWithFallback
-              src={pet.imageUrl}
-              alt={pet.name}
+              src={animal.photoUrl}
+              alt={animal.name}
               className="w-full h-full object-cover"
             />
             <div className="absolute top-4 left-4">
               <span className="px-4 py-2 bg-purple-600 text-white rounded-full">
-                {type}
+                {species}
               </span>
             </div>
           </div>
@@ -124,7 +126,7 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
           </div>
         )}
 
-        {/* Pet Information */}
+        {/* Animal Information */}
         <div className="bg-white rounded-2xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl text-gray-900">
@@ -151,6 +153,22 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
             )}
           </div>
 
+
+          {isEditing ? (
+          <div className="space-y-4">
+            {/* Photo */}
+            <div>
+              <label className="block text-sm text-gray-500 mb-2">Link da Foto</label>
+                <Input
+                  type="text"
+                  value={photoUrl}
+                  onChange={(e) => setPhotoUrl(e.target.value)}
+                  className="w-full"
+                />
+            </div>
+          </div>
+              ) : null}
+
           <div className="space-y-4">
             {/* Name */}
             <div>
@@ -163,7 +181,7 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
                   className="w-full"
                 />
               ) : (
-                <p className="text-gray-900 text-lg">{pet.name}</p>
+                <p className="text-gray-900 text-lg">{animal.name}</p>
               )}
             </div>
 
@@ -173,15 +191,15 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
                 <label className="block text-sm text-gray-500 mb-2">Espécie</label>
                 {isEditing ? (
                   <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
+                    value={species}
+                    onChange={(e) => setSpecies(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="Cachorro">Cachorro</option>
                     <option value="Gato">Gato</option>
                   </select>
                 ) : (
-                  <p className="text-gray-900">{pet.type}</p>
+                  <p className="text-gray-900">{animal.species}</p>
                 )}
               </div>
               <div>
@@ -194,7 +212,7 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
                     className="w-full"
                   />
                 ) : (
-                  <p className="text-gray-900">{pet.breed}</p>
+                  <p className="text-gray-900">{animal.breed}</p>
                 )}
               </div>
             </div>
@@ -212,7 +230,7 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
                     placeholder="Ex: 2 anos, 6 meses"
                   />
                 ) : (
-                  <p className="text-gray-900">{pet.age}</p>
+                  <p className="text-gray-900">{animal.age}</p>
                 )}
               </div>
               <div>
@@ -227,7 +245,7 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
                     <option value="Fêmea">Fêmea</option>
                   </select>
                 ) : (
-                  <p className="text-gray-900">{pet.gender}</p>
+                  <p className="text-gray-900">{animal.gender}</p>
                 )}
               </div>
             </div>
@@ -248,7 +266,7 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
                     <option value="Grande">Grande</option>
                   </select>
                 ) : (
-                  <p className="text-gray-900">{pet.size || 'Não informado'}</p>
+                  <p className="text-gray-900">{animal.size || 'Não informado'}</p>
                 )}
               </div>
             </div>
@@ -265,7 +283,7 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
                   placeholder="Ex: Calmo, Brincalhão, Sociável"
                 />
               ) : (
-                <p className="text-gray-900">{pet.personality || 'Não informado'}</p>
+                <p className="text-gray-900">{animal.personality || 'Não informado'}</p>
               )}
             </div>
 
@@ -281,7 +299,7 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
                   placeholder="Ex: Vacinado, Castrado, Saudável"
                 />
               ) : (
-                <p className="text-gray-900">{pet.healthStatus || 'Não informado'}</p>
+                <p className="text-gray-900">{animal.healthStatus || 'Não informado'}</p>
               )}
             </div>
 
@@ -296,7 +314,7 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
                   placeholder="Conte mais sobre o animal..."
                 />
               ) : (
-                <p className="text-gray-900">{pet.description || 'Não informado'}</p>
+                <p className="text-gray-900">{animal.description || 'Não informado'}</p>
               )}
             </div>
           </div>
@@ -317,7 +335,7 @@ export function ManagePetScreen({ pet, onBack, onUpdate, onDelete }: ManagePetSc
               </h2>
 
               <p className="text-gray-600 text-center mb-6">
-                Você tem certeza que deseja remover <strong>{pet.name}</strong> do sistema?
+                Você tem certeza que deseja remover <strong>{animal.name}</strong> do sistema?
               </p>
 
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">

@@ -12,7 +12,7 @@ export interface Shelter {
   phone: string;
   email: string;
   description: string;
-  imageUrl: string;
+  photoUrl: string;
   animalsCount: number;
   availableDogs: number;
   availableCats: number;

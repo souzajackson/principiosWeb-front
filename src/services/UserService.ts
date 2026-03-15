@@ -1,7 +1,14 @@
 // src/services/userService.ts
 import { http } from '../lib/api';
+import { UserRole } from './enums';
 
-export type UserRole = 'SHELTER' | 'USER';
+
+export interface UserProfile {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+}
 
 export interface CreateUserRequest {
   name: string;
@@ -23,4 +30,16 @@ export async function createUser(payload: CreateUserRequest): Promise<CreateUser
     method: 'POST',
     body: payload,
   });
+}
+
+export function getUserById(id: number) {
+  return http<UserProfile>(`/users/${id}`);
+}
+
+export function updateUser(id: number, data: Partial<UserProfile>) {
+  return http<{ message: string }>(`/users/${id}`, { method: 'PUT', body: data });
+}
+
+export function deleteUser(id: number) {
+  return http<{ message: string }>(`/users/${id}`, { method: 'DELETE' });
 }

@@ -3,50 +3,20 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Button } from './ui/button';
 import { AdoptionConfirmModal } from './AdoptionConfirmModal';
 import { useState } from 'react';
+import { Animal } from '@/services/AnimalService';
 
-// Interface espelho exato dos campos retornados pelo backend
-export interface Pet {
-  id: string;
-  name: string;
-  type: string;          // "Cachorro" | "Gato"
-  breed: string;
-  age: string;           // número convertido para string no animalToPet
-  gender: string;
-  size: string;
-  imageUrl: string;      // campo exato do backend
-  description: string;
-  personality: string;   // vem como "[]" ou JSON string
-  healthStatus: string;
-  vaccinated: boolean;
-  neutered: boolean;
-  shelterName: string;   // campo exato do backend
-  shelterPhone: string;
-  shelterEmail: string;
-  location: string;
-}
 
-interface PetDetailsScreenProps {
-  pet: Pet;
+interface animalDetailsScreenProps {
+  animal: Animal;
   onBack: () => void;
-  onAdopt: (petId: string) => void;
+  onAdopt: (animalId: Number) => void;
 }
 
-// Normaliza personality: "[]", JSON array ou texto livre → array de strings
-function parsePersonality(value: string): string[] {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    if (Array.isArray(parsed)) return parsed.filter(Boolean);
-  } catch {}
-  return value.split(',').map(s => s.trim()).filter(Boolean);
-}
-
-export function PetDetailsScreen({ pet, onBack, onAdopt }: PetDetailsScreenProps) {
+export function AnimalDetailsScreen({ animal, onBack, onAdopt }: animalDetailsScreenProps) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const handleConfirmAdopt = () => { setShowConfirmModal(false); onAdopt(pet.id); };
+  const handleConfirmAdopt = () => { setShowConfirmModal(false); onAdopt(animal.id); };
 
-  const personalityTags = parsePersonality(pet.personality);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -60,7 +30,7 @@ export function PetDetailsScreen({ pet, onBack, onAdopt }: PetDetailsScreenProps
             </button>
             <div className="flex-1 flex items-center justify-center gap-2">
               <Heart className="w-6 h-6 text-purple-600" fill="currentColor" />
-              <h1 className="text-xl text-purple-600">PetConnect</h1>
+              <h1 className="text-xl text-purple-600">animalConnect</h1>
             </div>
             <div className="w-24"></div>
           </div>
@@ -74,8 +44,8 @@ export function PetDetailsScreen({ pet, onBack, onAdopt }: PetDetailsScreenProps
           <div>
             <div className="relative rounded-2xl overflow-hidden shadow-lg bg-gray-200 aspect-square">
               <ImageWithFallback
-                src={pet.imageUrl}
-                alt={pet.name}
+                src={animal.photoUrl}
+                alt={animal.name}
                 className="w-full h-full object-cover"
               />
               <button className="absolute top-4 right-4 p-3 bg-white rounded-full shadow-md hover:bg-purple-50 transition-colors">
@@ -89,12 +59,12 @@ export function PetDetailsScreen({ pet, onBack, onAdopt }: PetDetailsScreenProps
             {/* Name */}
             <div>
               <div className="flex items-start justify-between mb-2">
-                <h2 className="text-4xl text-gray-900">{pet.name}</h2>
+                <h2 className="text-4xl text-gray-900">{animal.name}</h2>
                 <span className="px-4 py-2 bg-purple-100 text-purple-700 rounded-full">
-                  {pet.type === 'Cachorro' ? '🐕 Cão' : '🐱 Gato'}
+                  {animal.species === 'Cachorro' ? '🐕 Cão' : '🐱 Gato'}
                 </span>
               </div>
-              <p className="text-xl text-gray-600">{pet.breed}</p>
+              <p className="text-xl text-gray-600">{animal.breed}</p>
             </div>
 
             {/* Quick Facts */}
@@ -103,53 +73,47 @@ export function PetDetailsScreen({ pet, onBack, onAdopt }: PetDetailsScreenProps
                 <Calendar className="w-5 h-5 text-purple-600" />
                 <div>
                   <p className="text-xs text-gray-500">Idade</p>
-                  <p className="text-gray-900">{pet.age} {!isNaN(Number(pet.age)) ? 'anos' : ''}</p>
+                  <p className="text-gray-900">{animal.age} {!isNaN(Number(animal.age)) ? 'anos' : ''}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm">
                 <Activity className="w-5 h-5 text-purple-600" />
                 <div>
                   <p className="text-xs text-gray-500">Sexo</p>
-                  <p className="text-gray-900">{pet.gender}</p>
+                  <p className="text-gray-900">{animal.gender}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm">
                 <Ruler className="w-5 h-5 text-purple-600" />
                 <div>
                   <p className="text-xs text-gray-500">Porte</p>
-                  <p className="text-gray-900">{pet.size || '—'}</p>
+                  <p className="text-gray-900">{animal.size || '—'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm">
                 <MapPin className="w-5 h-5 text-purple-600" />
                 <div>
                   <p className="text-xs text-gray-500">Localização</p>
-                  <p className="text-gray-900 text-sm">{pet.location || '—'}</p>
+                  <p className="text-gray-900 text-sm">{animal.location || '—'}</p>
                 </div>
               </div>
             </div>
 
             {/* Description */}
-            {pet.description ? (
+            {animal.description ? (
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="text-lg text-gray-900 mb-3">Sobre {pet.name}</h3>
-                <p className="text-gray-600 leading-relaxed">{pet.description}</p>
+                <h3 className="text-lg text-gray-900 mb-3">Sobre {animal.name}</h3>
+                <p className="text-gray-600 leading-relaxed">{animal.description}</p>
               </div>
             ) : null}
 
             {/* Personality */}
-            {personalityTags.length > 0 && (
+            {animal.personality? (
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h3 className="text-lg text-gray-900 mb-3">Personalidade</h3>
-                <div className="flex flex-wrap gap-2">
-                  {personalityTags.map((trait, i) => (
-                    <span key={i} className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm">
-                      {trait}
-                    </span>
-                  ))}
-                </div>
+                <p className="text-gray-600 leading-relaxed">{animal.personality}</p>
               </div>
-            )}
+            ) : null}
 
             {/* Health */}
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -157,41 +121,41 @@ export function PetDetailsScreen({ pet, onBack, onAdopt }: PetDetailsScreenProps
                 <Shield className="w-5 h-5 text-purple-600" />
                 <h3 className="text-lg text-gray-900">Saúde</h3>
               </div>
-              {pet.healthStatus && <p className="text-gray-600 mb-3">{pet.healthStatus}</p>}
+              {animal.healthStatus && <p className="text-gray-600 mb-3">{animal.healthStatus}</p>}
               <div className="flex flex-wrap gap-3">
-                <span className={`px-3 py-1 rounded-full text-sm ${pet.vaccinated ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                  {pet.vaccinated ? '✓ Vacinado' : '✗ Não vacinado'}
+                <span className={`px-3 py-1 rounded-full text-sm ${animal.vaccinated ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                  {animal.vaccinated ? '✓ Vacinado' : '✗ Não vacinado'}
                 </span>
-                <span className={`px-3 py-1 rounded-full text-sm ${pet.neutered ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                  {pet.neutered ? '✓ Castrado' : '✗ Não castrado'}
+                <span className={`px-3 py-1 rounded-full text-sm ${animal.neutered ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                  {animal.neutered ? '✓ Castrado' : '✗ Não castrado'}
                 </span>
               </div>
             </div>
 
             {/* Shelter Info */}
-            {pet.shelterName && (
+            {animal.shelterName && (
               <div className="bg-purple-50 rounded-lg border border-purple-200 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Building2 className="w-5 h-5 text-purple-600" />
-                  <h3 className="text-lg text-gray-900">{pet.shelterName}</h3>
+                  <h3 className="text-lg text-gray-900">{animal.shelterName}</h3>
                 </div>
                 <div className="space-y-2">
-                  {pet.shelterPhone && (
+                  {animal.shelterPhone && (
                     <div className="flex items-center gap-2 text-gray-600">
                       <Phone className="w-4 h-4" />
-                      <span className="text-sm">{pet.shelterPhone}</span>
+                      <span className="text-sm">{animal.shelterPhone}</span>
                     </div>
                   )}
-                  {pet.shelterEmail && (
+                  {animal.shelterEmail && (
                     <div className="flex items-center gap-2 text-gray-600">
                       <Mail className="w-4 h-4" />
-                      <span className="text-sm">{pet.shelterEmail}</span>
+                      <span className="text-sm">{animal.shelterEmail}</span>
                     </div>
                   )}
-                  {pet.location && (
+                  {animal.location && (
                     <div className="flex items-center gap-2 text-gray-600">
                       <MapPin className="w-4 h-4" />
-                      <span className="text-sm">{pet.location}</span>
+                      <span className="text-sm">{animal.location}</span>
                     </div>
                   )}
                 </div>
@@ -214,7 +178,7 @@ export function PetDetailsScreen({ pet, onBack, onAdopt }: PetDetailsScreenProps
 
       {showConfirmModal && (
         <AdoptionConfirmModal
-          pet={pet}
+          animal={animal}
           onConfirm={handleConfirmAdopt}
           onCancel={() => setShowConfirmModal(false)}
         />

@@ -1,44 +1,21 @@
 import { Heart, MapPin, Search, User, LogOut, Building2, Filter } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Input } from './ui/input';
-import type { Pet } from './PetDetailsScreen';
 import { useState, useEffect } from 'react';
-import { getAllAnimals, type Animal } from '../../services/ApiService';
-
-function animalToPet(a: Animal): Pet {
-  return {
-    id:           String(a.id),
-    name:         a.name,
-    type:         a.type          ?? '',
-    breed:        a.breed         ?? '',
-    age:          String(a.age),
-    gender:       a.gender        ?? '',
-    size:         a.size          ?? '',
-    imageUrl:     a.imageUrl      ?? '',
-    description:  a.description   ?? '',
-    personality:  a.personality   ?? '[]',
-    healthStatus: a.healthStatus  ?? '',
-    vaccinated:   a.vaccinated    ?? false,
-    neutered:     a.neutered      ?? false,
-    shelterName:  a.shelterName   ?? '',
-    shelterPhone: a.shelterPhone  ?? '',
-    shelterEmail: a.shelterEmail  ?? '',
-    location:     a.location      ?? '',
-  };
-}
+import { Animal, getAllAnimals } from '@/services/AnimalService';
 
 interface HomeScreenProps {
   onLogout: () => void;
-  onSelectPet: (pet: Pet) => void;
+  onSelectAnimal: (animal: Animal) => void;
   onGoToShelters: () => void;
   onGoToProfile: () => void;
 }
 
-export function HomeScreen({ onLogout, onSelectPet, onGoToShelters, onGoToProfile }: HomeScreenProps) {
+export function HomeScreen({ onLogout, onSelectAnimal, onGoToShelters, onGoToProfile }: HomeScreenProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showFilters, setShowFilters]   = useState(false);
   const [searchTerm, setSearchTerm]     = useState('');
-  const [pets, setPets]                 = useState<Pet[]>([]);
+  const [animals, setAnimals]                 = useState<Animal[]>([]);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState<string | null>(null);
 
@@ -46,26 +23,26 @@ export function HomeScreen({ onLogout, onSelectPet, onGoToShelters, onGoToProfil
   const [selectedGender,  setSelectedGender]  = useState<'all' | 'Macho' | 'Fêmea'>('all');
   const [selectedSize,    setSelectedSize]    = useState<'all' | 'Pequeno' | 'Médio' | 'Grande'>('all');
 
-  const fetchPets = () => {
+  const fetchAnimals = () => {
     setLoading(true);
     setError(null);
     getAllAnimals()
-      .then(animals => setPets(animals.map(animalToPet)))
+      .then(setAnimals)
       .catch(() => setError('Não foi possível carregar os animais. Tente novamente.'))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchPets(); }, []);
+  useEffect(() => { fetchAnimals(); }, []);
 
-  const filteredPets = pets.filter(pet => {
+  const filteredAnimals = animals.filter(animal => {
     const matchesSearch =
-      pet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pet.breed.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pet.location.toLowerCase().includes(searchTerm.toLowerCase());
+      animal.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      animal.breed?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      animal.location?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesSpecies = selectedSpecies === 'all' || pet.type === selectedSpecies;
-    const matchesGender  = selectedGender  === 'all' || pet.gender === selectedGender;
-    const matchesSize    = selectedSize    === 'all' || pet.size   === selectedSize;
+    const matchesSpecies = selectedSpecies === 'all' || animal.species === selectedSpecies;
+    const matchesGender  = selectedGender  === 'all' || animal.gender === selectedGender;
+    const matchesSize    = selectedSize    === 'all' || animal.size   === selectedSize;
 
     return matchesSearch && matchesSpecies && matchesGender && matchesSize;
   });
@@ -86,11 +63,11 @@ export function HomeScreen({ onLogout, onSelectPet, onGoToShelters, onGoToProfil
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
               <Heart className="w-8 h-8 text-purple-600" fill="currentColor" />
-              <h1 className="text-2xl text-purple-600">PetConnect</h1>
+              <h1 className="text-2xl text-purple-600">AnimalConnect</h1>
             </div>
 
             <div className="hidden md:flex items-center gap-6">
-              <button className="text-purple-600 border-b-2 border-purple-600 pb-1">Pets</button>
+              <button className="text-purple-600 border-b-2 border-purple-600 pb-1">Animals</button>
               <button onClick={onGoToShelters} className="text-gray-600 hover:text-purple-600 transition-colors">Abrigos</button>
             </div>
 
@@ -125,11 +102,11 @@ export function HomeScreen({ onLogout, onSelectPet, onGoToShelters, onGoToProfil
           <div className="md:hidden pb-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input type="text" placeholder="Buscar pets..." className="pl-10 w-full" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <Input type="text" placeholder="Buscar animals..." className="pl-10 w-full" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
           </div>
           <div className="md:hidden pb-4 flex gap-4">
-            <button className="flex-1 py-2 text-purple-600 border-b-2 border-purple-600">Pets</button>
+            <button className="flex-1 py-2 text-purple-600 border-b-2 border-purple-600">Animals</button>
             <button onClick={onGoToShelters} className="flex-1 py-2 text-gray-600 hover:text-purple-600 transition-colors">Abrigos</button>
           </div>
         </div>
@@ -139,15 +116,15 @@ export function HomeScreen({ onLogout, onSelectPet, onGoToShelters, onGoToProfil
       <div className="bg-gradient-to-r from-purple-600 to-pink-500 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl mb-4">Encontre seu novo melhor amigo</h2>
-          <p className="text-xl opacity-90">Centenas de pets esperando por um lar cheio de amor e carinho</p>
+          <p className="text-xl opacity-90">Centenas de animals esperando por um lar cheio de amor e carinho</p>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-between mb-8">
-          <h3 className="text-2xl text-gray-900">Pets disponíveis para adoção</h3>
-          {!loading && !error && <p className="text-gray-600">{pets.length} {pets.length === 1 ? 'pet encontrado' : 'pets encontrados'}</p>}
+          <h3 className="text-2xl text-gray-900">Animals disponíveis para adoção</h3>
+          {!loading && !error && <p className="text-gray-600">{animals.length} {animals.length === 1 ? 'animal encontrado' : 'animals encontrados'}</p>}
         </div>
 
         {/* Search + Filters */}
@@ -218,12 +195,12 @@ export function HomeScreen({ onLogout, onSelectPet, onGoToShelters, onGoToProfil
         {!loading && error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
             <p className="text-red-700 mb-4">{error}</p>
-            <button onClick={fetchPets} className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">Tentar novamente</button>
+            <button onClick={fetchAnimals} className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">Tentar novamente</button>
           </div>
         )}
 
         {/* Empty */}
-        {!loading && !error && pets.length === 0 && (
+        {!loading && !error && animals.length === 0 && (
           <div className="bg-white rounded-xl shadow-sm p-16 text-center">
             <Heart className="w-16 h-16 text-gray-200 mx-auto mb-4" fill="currentColor" />
             <p className="text-gray-500 text-lg mb-2">Nenhum animal disponível no momento</p>
@@ -232,23 +209,23 @@ export function HomeScreen({ onLogout, onSelectPet, onGoToShelters, onGoToProfil
         )}
 
         {/* Results */}
-        {!loading && !error && pets.length > 0 && (
+        {!loading && !error && animals.length > 0 && (
           <>
             <div className="mb-4 text-sm text-gray-600">
-              {filteredPets.length} {filteredPets.length === 1 ? 'pet encontrado' : 'pets encontrados'}
+              {filteredAnimals.length} {filteredAnimals.length === 1 ? 'animal encontrado' : 'animals encontrados'}
             </div>
 
-            {filteredPets.length === 0 ? (
+            {filteredAnimals.length === 0 ? (
               <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-                <p className="text-gray-500 mb-2">Nenhum pet corresponde aos filtros selecionados</p>
+                <p className="text-gray-500 mb-2">Nenhum animal corresponde aos filtros selecionados</p>
                 <button onClick={clearFilters} className="text-sm text-purple-600 hover:text-purple-700 underline">Limpar filtros</button>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredPets.map((pet) => (
-                  <div key={pet.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group" onClick={() => onSelectPet(pet)}>
+                {filteredAnimals.map((animal) => (
+                  <div key={animal.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group" onClick={() => onSelectAnimal(animal)}>
                     <div className="relative h-64 overflow-hidden bg-gray-200">
-                      <ImageWithFallback src={pet.imageUrl} alt={pet.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <ImageWithFallback src={animal.photoUrl} alt={animal.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       <button className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-purple-50 transition-colors">
                         <Heart className="w-5 h-5 text-purple-600" />
                       </button>
@@ -256,24 +233,24 @@ export function HomeScreen({ onLogout, onSelectPet, onGoToShelters, onGoToProfil
                     <div className="p-4">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h4 className="text-xl text-gray-900 mb-1">{pet.name}</h4>
-                          <p className="text-sm text-gray-600">{pet.breed} • {pet.age} anos</p>
+                          <h4 className="text-xl text-gray-900 mb-1">{animal.name}</h4>
+                          <p className="text-sm text-gray-600">{animal.breed} • {animal.age} anos</p>
                         </div>
                         <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
-                          {pet.type === 'Cachorro' ? '🐕 Cão' : '🐱 Gato'}
+                          {animal.species === 'Cachorro' ? '🐕 Cão' : '🐱 Gato'}
                         </span>
                       </div>
                       <div className="mt-4 pt-4 border-t border-gray-100">
-                        {pet.shelterName && (
+                        {animal.shelterName && (
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <Building2 className="w-4 h-4 flex-shrink-0" />
-                            <span className="truncate">{pet.shelterName}</span>
+                            <span className="truncate">{animal.shelterName}</span>
                           </div>
                         )}
-                        {pet.location && (
+                        {animal.location && (
                           <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
                             <MapPin className="w-4 h-4 flex-shrink-0" />
-                            <span className="truncate">{pet.location}</span>
+                            <span className="truncate">{animal.location}</span>
                           </div>
                         )}
                       </div>

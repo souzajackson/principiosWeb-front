@@ -4,19 +4,17 @@ import { LoginScreen } from './components/LoginScreen';
 import { SignupScreen } from './components/SignupScreen';
 import { ShelterRegistrationScreen } from './components/ShelterRegistrationScreen';
 import { HomeScreen } from './components/HomeScreen';
-import { PetDetailsScreen, type Pet } from './components/PetDetailsScreen';
+import { AnimalDetailsScreen } from './components/AnimalDetailsScreen';
 import { SheltersScreen } from './components/SheltersScreen';
 import { ShelterDetailsScreen } from './components/ShelterDetailsScreen';
 import { ScheduleVisitModal, type Shelter } from './components/ScheduleVisitModal';
 import { ProfileScreen } from './components/ProfileScreen';
-import { AdoptionRequestsScreen, type PetAdoptionGroup } from './components/AdoptionRequestsScreen'; // ← removido AdoptionRequest
+import { AdoptionRequestsScreen, type AnimalAdoptionGroup } from './components/AdoptionRequestsScreen'; // ← removido AdoptionRequest
 import { AdoptionRequestDetailsScreen } from './components/AdoptionRequestDetailsScreen';
 import { MyVisitsScreen } from './components/MyVisitsScreen';
 import { MyAdoptionRequestsScreen } from './components/MyAdoptionRequestsScreen';
 import { ShelterVisitsScreen } from './components/ShelterVisitsScreen';
 import { ShelterDashboardScreen } from './components/ShelterDashboardScreen';
-import { ManagePetScreen } from './components/ManagePetScreen';
-import { AddPetScreen } from './components/AddPetScreen';
 
 // Serviços de autenticação e API
 import {
@@ -27,30 +25,24 @@ import {
   decodeTokenPayload,
   isLoggedIn,
   type AuthUser,
+  login,
 } from '../services/AuthService';
-import {
-  login as apiLogin,
-  createUser as apiCreateUser,
-  createShelter as apiCreateShelter,
-  getUserById,
-  getAllAnimals,
-  createAnimal,
-  updateAnimal,
-  deleteAnimal,
-  createVisit,
-  createAdoption,
-  type UserProfile as ApiUserProfile,
-  type Animal,
-} from '../services/ApiService';
+
 import { ApiError } from '../lib/api';
+import { Animal, createAnimal, deleteAnimal, getAllAnimals, updateAnimal } from '@/services/AnimalService';
+import { getUserById, UserProfile } from '@/services/UserService';
+import { createVisit } from '@/services/VisitService';
+import { createAdoption } from '@/services/AdoptionService';
+import { AddAnimalScreen } from './components/AddAnimalScreen';
+import { ManageAnimalScreen } from './components/ManageAnimalScreen';
 
 // ─── Tipos locais ─────────────────────────────────────────────────────────────
 
 type Screen =
-  | 'login' | 'signup' | 'shelter-registration' | 'home' | 'pet-details'
+  | 'login' | 'signup' | 'shelter-registration' | 'home' | 'Animal-details'
   | 'shelters' | 'shelter-details' | 'profile' | 'adoption-requests'
   | 'request-details' | 'my-visits' | 'my-adoptions' | 'shelter-visits'
-  | 'shelter-dashboard' | 'manage-pet' | 'add-pet';
+  | 'shelter-dashboard' | 'manage-Animal' | 'add-Animal';
 
 interface SignupData {
   name: string;
@@ -58,28 +50,6 @@ interface SignupData {
   password: string;
 }
 
-// Converte Animal do backend para o formato Pet que os componentes esperam
-function animalToPet(a: Animal): Pet {
-  return {
-    id:           String(a.id),
-    name:         a.name,
-    type:         a.type          ?? '',
-    breed:        a.breed         ?? '',
-    age:          String(a.age),
-    gender:       a.gender        ?? '',
-    size:         a.size          ?? '',
-    imageUrl:     a.imageUrl      ?? '',
-    description:  a.description   ?? '',
-    personality:  a.personality   ?? '[]',
-    healthStatus: a.healthStatus  ?? '',
-    vaccinated:   a.vaccinated    ?? false,
-    neutered:     a.neutered      ?? false,
-    shelterName:  a.shelterName   ?? '',
-    shelterPhone: a.shelterPhone  ?? '',
-    shelterEmail: a.shelterEmail  ?? '',
-    location:     a.location      ?? '',
-  };
-}
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -90,21 +60,21 @@ export default function App() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
 
   // Perfil completo (nome, email…) buscado via GET /users/:id
-  const [userProfile, setUserProfile] = useState<ApiUserProfile | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   // Dados temporários durante o fluxo de cadastro
   const [signupData, setSignupData] = useState<SignupData | null>(null);
 
-  // Pets do abrigo (carregados do backend)
-  const [shelterPets, setShelterPets] = useState<Pet[]>([]);
+  // Animals do abrigo (carregados do backend)
+  const [shelterAnimals, setShelterAnimals] = useState<Animal[]>([]);
 
-  const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
+  const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
   const [selectedShelter, setSelectedShelter] = useState<Shelter | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
 
-  // ← Antes era { petId, petName, requests: AdoptionRequest[] }
+  // ← Antes era { AnimalId, AnimalName, requests: AdoptionRequest[] }
   // Agora é o grupo completo vindo direto da API
-  const [selectedPetGroup, setSelectedPetGroup] = useState<PetAdoptionGroup | null>(null);
+  const [selectedAnimalGroup, setSelectedAnimalGroup] = useState<AnimalAdoptionGroup | null>(null);
 
   // ─── Restaurar sessão ao abrir o app ────────────────────────────────────────
   useEffect(() => {
@@ -125,11 +95,12 @@ export default function App() {
       });
   }, []);
 
-  // ─── Carregar pets do abrigo quando chega no dashboard ───────────────────────
+  // ─── Carregar Animals do abrigo quando chega no dashboard ───────────────────────
   useEffect(() => {
     if (currentScreen !== 'shelter-dashboard') return;
+
     getAllAnimals()
-      .then(animals => setShelterPets(animals.map(animalToPet)))
+      .then(setShelterAnimals)
       .catch(console.error);
   }, [currentScreen]);
 
@@ -137,7 +108,7 @@ export default function App() {
 
   const handleLogin = async (email: string, password: string) => {
     try {
-      const { token } = await apiLogin(email, password);
+      const { token } = await login(email, password);
       saveToken(token);
 
       const decoded = decodeTokenPayload(token);
@@ -160,10 +131,10 @@ export default function App() {
     clearSession();
     setAuthUser(null);
     setUserProfile(null);
-    setSelectedPet(null);
+    setSelectedAnimal(null);
     setSelectedShelter(null);
-    setSelectedPetGroup(null);
-    setShelterPets([]);
+    setSelectedAnimalGroup(null);
+    setShelterAnimals([]);
     setCurrentScreen('login');
   };
 
@@ -172,7 +143,7 @@ export default function App() {
   const handleGoToSignup  = () => setCurrentScreen('signup');
   const handleGoToLogin   = () => setCurrentScreen('login');
 
-  const handleSignupComplete = async (_data: SignupData) => {
+  const handleSignupComplete = async () => {
     try {
       alert('Cadastro realizado! Faça login para continuar. ✅');
       setCurrentScreen('login');
@@ -189,14 +160,10 @@ export default function App() {
 
   const handleBackToSignup = () => setCurrentScreen('signup');
 
-  const handleShelterComplete = async (shelterData: {
-    shelterName: string;
-    address: string;
-    phone: string;
-  }) => {
+  const handleShelterComplete = async () => {
     if (!signupData) return;
     try {
-      const { token } = await apiLogin(signupData.email, signupData.password);
+      const { token } = await login(signupData.email, signupData.password);
       saveToken(token);
 
       const decoded = decodeTokenPayload(token);
@@ -213,21 +180,21 @@ export default function App() {
     }
   };
 
-  // ─── Pet handlers ─────────────────────────────────────────────────────────────
+  // ─── Animal handlers ─────────────────────────────────────────────────────────────
 
-  const handleSelectPet = (pet: Pet) => {
-    setSelectedPet(pet);
-    setCurrentScreen('pet-details');
+  const handleSelectAnimal = (Animal: Animal) => {
+    setSelectedAnimal(Animal);
+    setCurrentScreen('Animal-details');
   };
 
   const handleBackToHome = () => {
-    setSelectedPet(null);
+    setSelectedAnimal(null);
     setCurrentScreen('home');
   };
 
-  const handleAdoptRequest = async (petId: string) => {
+  const handleAdoptRequest = async (AnimalId: Number) => {
     try {
-      await createAdoption({ animalId: Number(petId) });
+      await createAdoption({ animalId: Number(AnimalId) });
       alert('Solicitação de adoção enviada com sucesso! O abrigo entrará em contato em breve. 🐾');
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Erro ao solicitar adoção.';
@@ -235,34 +202,34 @@ export default function App() {
     }
   };
 
-  // ─── Shelter pet management ───────────────────────────────────────────────────
+  // ─── Shelter Animal management ───────────────────────────────────────────────────
 
-  const handleSelectPetInShelter = (pet: Pet) => {
-    setSelectedPet(pet);
-    setCurrentScreen('manage-pet');
+  const handleSelectAnimalInShelter = (Animal: Animal) => {
+    setSelectedAnimal(Animal);
+    setCurrentScreen('manage-Animal');
   };
 
-  const handleBackFromManagePet = () => {
-    setSelectedPet(null);
+  const handleBackFromManageAnimal = () => {
+    setSelectedAnimal(null);
     setCurrentScreen('shelter-dashboard');
   };
 
-  const handleUpdatePet = async (updatedPet: Pet) => {
+  const handleUpdateAnimal = async (updatedAnimal: Animal) => {
     try {
-      await updateAnimal(Number(updatedPet.id), {
-        name:         updatedPet.name,
-        species:      updatedPet.type,
-        breed:        updatedPet.breed,
-        age:          String(updatedPet.age),
-        gender:       updatedPet.gender,
-        size:         updatedPet.size,
-        image:        updatedPet.imageUrl,
-        personality:  updatedPet.personality,
-        healthStatus: updatedPet.healthStatus,
-        description:  updatedPet.description,
+      await updateAnimal(Number(updatedAnimal.id), {
+        name:         updatedAnimal.name,
+        species:      updatedAnimal.species,
+        breed:        updatedAnimal.breed,
+        age:          String(updatedAnimal.age),
+        gender:       updatedAnimal.gender,
+        size:         updatedAnimal.size,
+        photoUrl:        updatedAnimal.photoUrl,
+        personality:  updatedAnimal.personality,
+        healthStatus: updatedAnimal.healthStatus,
+        description:  updatedAnimal.description,
       });
-      setShelterPets(prev => prev.map(p => p.id === updatedPet.id ? updatedPet : p));
-      setSelectedPet(null);
+      setShelterAnimals(prev => prev.map(p => p.id === updatedAnimal.id ? updatedAnimal : p));
+      setSelectedAnimal(null);
       setCurrentScreen('shelter-dashboard');
       alert('Informações do animal atualizadas com sucesso! ✅');
     } catch (err) {
@@ -271,11 +238,11 @@ export default function App() {
     }
   };
 
-  const handleDeletePet = async (petId: string) => {
+  const handleDeleteAnimal = async (AnimalId: Number) => {
     try {
-      await deleteAnimal(Number(petId));
-      setShelterPets(prev => prev.filter(p => p.id !== petId));
-      setSelectedPet(null);
+      await deleteAnimal(Number(AnimalId));
+      setShelterAnimals(prev => prev.filter(p => p.id !== AnimalId));
+      setSelectedAnimal(null);
       setCurrentScreen('shelter-dashboard');
       alert('Animal removido do sistema com sucesso! 🗑️');
     } catch (err) {
@@ -284,27 +251,27 @@ export default function App() {
     }
   };
 
-  const handleGoToAddPet     = () => setCurrentScreen('add-pet');
-  const handleBackFromAddPet = () => setCurrentScreen('shelter-dashboard');
+  const handleGoToAddAnimal     = () => setCurrentScreen('add-Animal');
+  const handleBackFromAddAnimal = () => setCurrentScreen('shelter-dashboard');
 
-  const handleSaveNewPet = async (petData: Omit<Pet, 'id'>) => {
+  const handleSaveNewAnimal = async (AnimalData: Omit<Animal, 'id'>) => {
     try {
       const created = await createAnimal({
-        name:         petData.name,
-        species:      petData.species,
-        breed:        petData.breed,
-        age:          petData.age,
-        gender:       petData.gender,
-        size:         petData.size,
-        weight:       petData.weight,
-        color:        petData.color,
-        image:        petData.image,
-        personality:  petData.personality,
-        healthStatus: petData.healthStatus,
-        description:  petData.description,
+        name:         AnimalData.name,
+        species:      AnimalData.species,
+        breed:        AnimalData.breed,
+        age:          AnimalData.age,
+        gender:       AnimalData.gender,
+        size:         AnimalData.size,
+        weight:       AnimalData.weight,
+        color:        AnimalData.color,
+        photoUrl:     AnimalData.photoUrl,
+        personality:  AnimalData.personality,
+        healthStatus: AnimalData.healthStatus,
+        description:  AnimalData.description,
         shelterId:    authUser!.id,
       });
-      setShelterPets(prev => [...prev, animalToPet(created)]);
+      setShelterAnimals(prev => [...prev, created]);
       setCurrentScreen('shelter-dashboard');
       alert('Animal cadastrado com sucesso! 🎉');
     } catch (err) {
@@ -333,7 +300,7 @@ export default function App() {
   // ─── Navigation helpers ───────────────────────────────────────────────────────
 
   const handleGoToShelters  = () => setCurrentScreen('shelters');
-  const handleBackToPets    = () => setCurrentScreen('home');
+  const handleBackToAnimals    = () => setCurrentScreen('home');
 
   const handleSelectShelter = (shelter: Shelter) => {
     setSelectedShelter(shelter);
@@ -349,7 +316,7 @@ export default function App() {
     setCurrentScreen(authUser?.role === 'SHELTER' ? 'shelter-dashboard' : 'home');
   };
 
-  const handleUpdateProfile = async (updatedProfile: ApiUserProfile) => {
+  const handleUpdateProfile = async (updatedProfile: UserProfile) => {
     if (!authUser) return;
     try {
       await import('../lib/api').then(({ http }) =>
@@ -372,14 +339,14 @@ export default function App() {
   const handleGoToShelterVisits     = () => setCurrentScreen('shelter-visits');
   const handleBackFromShelterVisits = () => setCurrentScreen('profile');
 
-  // ← Antes recebia (petId, petName, requests[]); agora recebe o grupo completo
-  const handleSelectPetGroup = (group: PetAdoptionGroup) => {
-    setSelectedPetGroup(group);
+  // ← Antes recebia (AnimalId, AnimalName, requests[]); agora recebe o grupo completo
+  const handleSelectAnimalGroup = (group: AnimalAdoptionGroup) => {
+    setSelectedAnimalGroup(group);
     setCurrentScreen('request-details');
   };
 
   const handleBackFromRequestDetails = () => {
-    setSelectedPetGroup(null);
+    setSelectedAnimalGroup(null);
     setCurrentScreen('adoption-requests');
   };
 
@@ -399,17 +366,17 @@ export default function App() {
 
   // ─── Render ───────────────────────────────────────────────────────────────────
 
-  if (currentScreen === 'add-pet') {
-    return <AddPetScreen onBack={handleBackFromAddPet} onSave={handleSaveNewPet} />;
+  if (currentScreen === 'add-Animal') {
+    return <AddAnimalScreen onBack={handleBackFromAddAnimal} onSave={handleSaveNewAnimal} />;
   }
 
-  if (currentScreen === 'manage-pet' && selectedPet) {
+  if (currentScreen === 'manage-Animal' && selectedAnimal) {
     return (
-      <ManagePetScreen
-        pet={selectedPet}
-        onBack={handleBackFromManagePet}
-        onUpdate={handleUpdatePet}
-        onDelete={handleDeletePet}
+      <ManageAnimalScreen
+        animal={selectedAnimal}
+        onBack={handleBackFromManageAnimal}
+        onUpdate={handleUpdateAnimal}
+        onDelete={handleDeleteAnimal}
       />
     );
   }
@@ -418,10 +385,10 @@ export default function App() {
     return (
       <ShelterDashboardScreen
         onLogout={handleLogout}
-        onSelectPet={handleSelectPetInShelter}
-        onAddPet={handleGoToAddPet}
+        onSelectAnimal={handleSelectAnimalInShelter}
+        onAddAnimal={handleGoToAddAnimal}
         onGoToProfile={handleGoToProfile}
-        shelterPets={shelterPets}
+        shelterAnimals={shelterAnimals}
       />
     );
   }
@@ -439,10 +406,10 @@ export default function App() {
   }
 
   // ← Agora passa group diretamente; aceite/recusa são feitos internamente no componente
-  if (currentScreen === 'request-details' && selectedPetGroup) {
+  if (currentScreen === 'request-details' && selectedAnimalGroup) {
     return (
       <AdoptionRequestDetailsScreen
-        group={selectedPetGroup}
+        group={selectedAnimalGroup}
         onBack={handleBackFromRequestDetails}
       />
     );
@@ -452,7 +419,7 @@ export default function App() {
     return (
       <AdoptionRequestsScreen
         onBack={handleBackFromRequests}
-        onSelectPet={handleSelectPetGroup} // ← assinatura atualizada
+        onSelectAnimal={handleSelectAnimalGroup} // ← assinatura atualizada
         onLogout={handleLogout}
       />
     );
@@ -496,16 +463,16 @@ export default function App() {
       <SheltersScreen
         onLogout={handleLogout}
         onSelectShelter={handleSelectShelter}
-        onBackToPets={handleBackToPets}
+        onBackToAnimals={handleBackToAnimals}
         onGoToProfile={handleGoToProfile}
       />
     );
   }
 
-  if (currentScreen === 'pet-details' && selectedPet) {
+  if (currentScreen === 'Animal-details' && selectedAnimal) {
     return (
-      <PetDetailsScreen
-        pet={selectedPet}
+      <AnimalDetailsScreen
+        animal={selectedAnimal}
         onBack={handleBackToHome}
         onAdopt={handleAdoptRequest}
       />
@@ -516,7 +483,7 @@ export default function App() {
     return (
       <HomeScreen
         onLogout={handleLogout}
-        onSelectPet={handleSelectPet}
+        onSelectAnimal={handleSelectAnimal}
         onGoToShelters={handleGoToShelters}
         onGoToProfile={handleGoToProfile}
       />

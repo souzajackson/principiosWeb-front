@@ -2,9 +2,9 @@ import { Heart, ArrowLeft, Search, User, LogOut, PawPrint, ChevronRight } from '
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Input } from './ui/input';
 import { useState, useEffect, useMemo } from 'react';
-import { getMyShelterAdoptions, type Adoption } from '../../services/ApiService';
+import { Adoption, getMyShelterAdoptions } from '@/services/AdoptionService';
 
-export interface PetAdoptionGroup {
+export interface AnimalAdoptionGroup {
   animalId: number;
   animalName: string;
   animalImage?: string;
@@ -15,11 +15,11 @@ export interface PetAdoptionGroup {
 
 interface AdoptionRequestsScreenProps {
   onBack: () => void;
-  onSelectPet: (group: PetAdoptionGroup) => void;
+  onSelectAnimal: (group: AnimalAdoptionGroup) => void;
   onLogout: () => void;
 }
 
-export function AdoptionRequestsScreen({ onBack, onSelectPet, onLogout }: AdoptionRequestsScreenProps) {
+export function AdoptionRequestsScreen({ onBack, onSelectAnimal, onLogout }: AdoptionRequestsScreenProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [adoptions, setAdoptions] = useState<Adoption[]>([]);
@@ -46,8 +46,8 @@ export function AdoptionRequestsScreen({ onBack, onSelectPet, onLogout }: Adopti
   }, []);
 
   // Agrupa adoções por animal
-  const petGroups = useMemo<PetAdoptionGroup[]>(() => {
-    const map = new Map<number, PetAdoptionGroup>();
+  const animalGroups = useMemo<AnimalAdoptionGroup[]>(() => {
+    const map = new Map<number, AnimalAdoptionGroup>();
     for (const adoption of adoptions) {
       const id = adoption.animalId;
       if (!map.has(id)) {
@@ -65,7 +65,7 @@ export function AdoptionRequestsScreen({ onBack, onSelectPet, onLogout }: Adopti
     return Array.from(map.values());
   }, [adoptions]);
 
-  const filteredGroups = petGroups.filter(g =>
+  const filteredGroups = animalGroups.filter(g =>
     g.animalName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -83,7 +83,7 @@ export function AdoptionRequestsScreen({ onBack, onSelectPet, onLogout }: Adopti
             </button>
             <div className="flex items-center gap-2">
               <Heart className="w-6 h-6 text-purple-600" fill="currentColor" />
-              <h1 className="text-xl text-purple-600">PetConnect</h1>
+              <h1 className="text-xl text-purple-600">animalConnect</h1>
             </div>
             <div className="relative">
               <button onClick={() => setShowUserMenu(!showUserMenu)} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
@@ -149,7 +149,7 @@ export function AdoptionRequestsScreen({ onBack, onSelectPet, onLogout }: Adopti
                   <PawPrint className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-3xl text-gray-900">{petGroups.length}</p>
+                  <p className="text-3xl text-gray-900">{animalGroups.length}</p>
                   <p className="text-sm text-gray-600">Animais com solicitações</p>
                 </div>
               </div>
@@ -191,7 +191,7 @@ export function AdoptionRequestsScreen({ onBack, onSelectPet, onLogout }: Adopti
                     return (
                       <button
                         key={group.animalId}
-                        onClick={() => onSelectPet(group)}
+                        onClick={() => onSelectAnimal(group)}
                         className="w-full p-6 hover:bg-gray-50 transition-colors flex items-center gap-6 text-left"
                       >
                         <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">

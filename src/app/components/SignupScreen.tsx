@@ -5,9 +5,10 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
-import { createUser, type UserRole } from '@/services/UserService';
+import { createUser } from '@/services/UserService';
 import { ApiError } from '@/lib/api';
-import { login } from '@/services/ApiService';
+import { UserRole } from '@/services/enums';
+import { login } from '@/services/AuthService';
 
 interface SignupScreenProps {
   onProceedToShelter: (userData: {

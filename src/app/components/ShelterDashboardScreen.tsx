@@ -3,22 +3,22 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { useState } from 'react';
-import type { Pet } from './PetDetailsScreen';
+import { Animal } from '@/services/AnimalService';
 
 interface ShelterDashboardScreenProps {
   onLogout: () => void;
-  onSelectPet: (pet: Pet) => void;
-  onAddPet: () => void;
+  onSelectAnimal: (animal: Animal) => void;
+  onAddAnimal: () => void;
   onGoToProfile: () => void;
-  shelterPets: Pet[];
+  shelterAnimals: Animal[];
 }
 
 export function ShelterDashboardScreen({ 
   onLogout, 
-  onSelectPet, 
-  onAddPet, 
+  onSelectAnimal, 
+  onAddAnimal, 
   onGoToProfile,
-  shelterPets 
+  shelterAnimals 
 }: ShelterDashboardScreenProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,22 +29,22 @@ export function ShelterDashboardScreen({
   const [selectedGender, setSelectedGender] = useState<'all' | 'Macho' | 'Fêmea'>('all');
   const [selectedSize, setSelectedSize] = useState<'all' | 'Pequeno' | 'Médio' | 'Grande'>('all');
 
-  const filteredPets = shelterPets.filter(pet => {
-    const matchesSearch = pet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         pet.breed.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredAnimals = shelterAnimals.filter(animal => {
+    const matchesSearch = animal.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         animal.breed?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = selectedCategory === 'all' || 
-                           (selectedCategory === 'dogs' && pet.type === 'Cachorro') ||
-                           (selectedCategory === 'cats' && pet.type === 'Gato');
+                           (selectedCategory === 'dogs' && animal.species === 'Cachorro') ||
+                           (selectedCategory === 'cats' && animal.species === 'Gato');
     
-    const matchesGender = selectedGender === 'all' || pet.gender === selectedGender;
-    const matchesSize = selectedSize === 'all' || pet.size === selectedSize;
+    const matchesGender = selectedGender === 'all' || animal.gender === selectedGender;
+    const matchesSize = selectedSize === 'all' || animal.size === selectedSize;
     
     return matchesSearch && matchesCategory && matchesGender && matchesSize;
   });
 
-  const totalDogs = shelterPets.filter(p => p.type === 'Cachorro').length;
-  const totalCats = shelterPets.filter(p => p.type === 'Gato').length;
+  const totalDogs = shelterAnimals.filter(p => p.species === 'Cachorro').length;
+  const totalCats = shelterAnimals.filter(p => p.species === 'Gato').length;
 
   const clearFilters = () => {
     setSelectedGender('all');
@@ -61,7 +61,7 @@ export function ShelterDashboardScreen({
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
               <Heart className="w-6 h-6 text-purple-600" fill="currentColor" />
-              <h1 className="text-xl text-purple-600">PetConnect</h1>
+              <h1 className="text-xl text-purple-600">AnimalConnect</h1>
             </div>
 
             {/* User Menu */}
@@ -122,7 +122,7 @@ export function ShelterDashboardScreen({
               </p>
             </div>
             <Button
-              onClick={onAddPet}
+              onClick={onAddAnimal}
               className="bg-white text-purple-600 hover:bg-purple-50 px-6 py-3"
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -142,7 +142,7 @@ export function ShelterDashboardScreen({
                 <PawPrint className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-3xl text-gray-900">{shelterPets.length}</p>
+                <p className="text-3xl text-gray-900">{shelterAnimals.length}</p>
                 <p className="text-sm text-gray-600">Total de Animais</p>
               </div>
             </div>
@@ -196,7 +196,7 @@ export function ShelterDashboardScreen({
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Todos ({shelterPets.length})
+                Todos ({shelterAnimals.length})
               </button>
               <button
                 onClick={() => setSelectedCategory('dogs')}
@@ -287,23 +287,23 @@ export function ShelterDashboardScreen({
 
         {/* Results Count */}
         <div className="mb-4 text-sm text-gray-600">
-          {filteredPets.length} {filteredPets.length === 1 ? 'animal encontrado' : 'animais encontrados'}
+          {filteredAnimals.length} {filteredAnimals.length === 1 ? 'animal encontrado' : 'animais encontrados'}
         </div>
 
-        {/* Pets Grid */}
-        {filteredPets.length > 0 ? (
+        {/* Animals Grid */}
+        {filteredAnimals.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredPets.map((pet) => (
+            {filteredAnimals.map((animal) => (
               <div
-                key={pet.id}
+                key={animal.id}
                 className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
-                onClick={() => onSelectPet(pet)}
+                onClick={() => onSelectAnimal(animal)}
               >
-                {/* Pet Image */}
+                {/* Animal Image */}
                 <div className="relative h-64 bg-gray-200 overflow-hidden">
                   <ImageWithFallback
-                    src={pet.imageUrl}
-                    alt={pet.name}
+                    src={animal.photoUrl}
+                    alt={animal.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute top-3 right-3 bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -311,19 +311,19 @@ export function ShelterDashboardScreen({
                   </div>
                   <div className="absolute top-3 left-3">
                     <span className="px-3 py-1 bg-purple-600 text-white rounded-full text-sm">
-                      {pet.type}
+                      {animal.species}
                     </span>
                   </div>
                 </div>
 
-                {/* Pet Info */}
+                {/* Animal Info */}
                 <div className="p-4">
-                  <h3 className="text-xl text-gray-900 mb-2">{pet.name}</h3>
+                  <h3 className="text-xl text-gray-900 mb-2">{animal.name}</h3>
                   <div className="space-y-1 text-sm text-gray-600">
-                    <p>🐾 {pet.breed}</p>
-                    <p>🎂 {pet.age}</p>
-                    <p>⚧ {pet.gender}</p>
-                    {pet.size && <p>📏 {pet.size}</p>}
+                    <p>🐾 {animal.breed}</p>
+                    <p>🎂 {animal.age}</p>
+                    <p>⚧ {animal.gender}</p>
+                    {animal.size && <p>📏 {animal.size}</p>}
                   </div>
                 </div>
               </div>
@@ -339,9 +339,9 @@ export function ShelterDashboardScreen({
                 : 'Comece cadastrando seu primeiro animal'
               }
             </p>
-            {!searchTerm && shelterPets.length === 0 && (
+            {!searchTerm && shelterAnimals.length === 0 && (
               <Button
-                onClick={onAddPet}
+                onClick={onAddAnimal}
                 className="bg-purple-600 hover:bg-purple-700"
               >
                 <Plus className="w-4 h-4 mr-2" />

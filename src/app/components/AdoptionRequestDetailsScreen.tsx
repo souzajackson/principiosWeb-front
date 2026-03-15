@@ -4,11 +4,12 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
-import { approveAdoption, rejectAdoption, getUserById, type Adoption, type UserProfile } from '../../services/ApiService';
-import type { PetAdoptionGroup } from './AdoptionRequestsScreen';
+import { AnimalAdoptionGroup } from './AdoptionRequestsScreen';
+import { Adoption, approveAdoption, rejectAdoption } from '@/services/AdoptionService';
+import { getUserById, UserProfile } from '@/services/UserService';
 
 interface AdoptionRequestDetailsScreenProps {
-  group: PetAdoptionGroup;
+  group: AnimalAdoptionGroup;
   onBack: () => void;
 }
 

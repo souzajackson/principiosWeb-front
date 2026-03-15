@@ -27,7 +27,7 @@ interface UserProfile {
 interface ProfileScreenProps {
   userProfile: UserProfile;
   onBack: () => void;
-  onUpdateProfile: (profile: UserProfile) => void;
+  onUpdateProfile: (profile: UserProfile) => Promise<void>;
   onGoToRequests?: () => void;
   onGoToShelterVisits?: () => void;
   onGoToMyVisits?: () => void;

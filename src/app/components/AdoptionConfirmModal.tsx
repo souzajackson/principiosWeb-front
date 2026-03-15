@@ -1,14 +1,14 @@
 import { X } from 'lucide-react';
 import { Button } from './ui/button';
-import type { Pet } from './PetDetailsScreen';
+import { Animal } from '@/services/AnimalService';
 
 interface AdoptionConfirmModalProps {
-  pet: Pet;
+  animal: Animal;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export function AdoptionConfirmModal({ pet, onConfirm, onCancel }: AdoptionConfirmModalProps) {
+export function AdoptionConfirmModal({ animal, onConfirm, onCancel }: AdoptionConfirmModalProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
@@ -27,20 +27,20 @@ export function AdoptionConfirmModal({ pet, onConfirm, onCancel }: AdoptionConfi
         <div className="p-6">
           <div className="flex items-center gap-4 mb-6 p-4 bg-purple-50 rounded-lg">
             <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-3xl">
-              {pet.type === 'Cachorro' ? '🐕' : '🐱'}
+              {animal.species === 'Cachorro' ? '🐕' : '🐱'}
             </div>
             <div>
-              <h3 className="text-lg text-gray-900">{pet.name}</h3>
-              <p className="text-sm text-gray-600">{pet.breed} • {pet.age}</p>
+              <h3 className="text-lg text-gray-900">{animal.name}</h3>
+              <p className="text-sm text-gray-600">{animal.breed} • {animal.age}</p>
             </div>
           </div>
 
           <div className="space-y-4 mb-6">
             <p className="text-gray-700">
-              Você está prestes a solicitar a adoção de <strong>{pet.name}</strong>.
+              Você está prestes a solicitar a adoção de <strong>{animal.name}</strong>.
             </p>
             <p className="text-gray-600 text-sm">
-              O abrigo <strong>{pet.shelterName}</strong> entrará em contato com você em breve através dos dados cadastrados para dar continuidade ao processo de adoção.
+              O abrigo <strong>{animal.shelterName}</strong> entrará em contato com você em breve através dos dados cadastrados para dar continuidade ao processo de adoção.
             </p>
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
               <p className="text-sm text-purple-800">

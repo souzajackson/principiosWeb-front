@@ -1,5 +1,7 @@
 // src/services/authService.ts
 
+import { http } from "@/lib/api";
+
 const TOKEN_KEY = 'auth_token';
 const USER_KEY  = 'auth_user';
 
@@ -58,4 +60,25 @@ export function decodeTokenPayload(token: string): AuthUser | null {
 
 export function isLoggedIn(): boolean {
   return !!getToken();
+}
+
+//rotas
+
+export interface LoginResponse {
+  message: string;
+  token: string;
+}
+
+export function setAuthToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export async function login(email: string, password: string) {
+  const res = await http<LoginResponse>('/auth/login', {
+    method: 'POST',
+    body: { email, password },
+    auth: false,
+  });
+  setAuthToken(res.token);
+  return res;
 }

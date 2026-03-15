@@ -2,14 +2,14 @@ import { Heart, ArrowLeft, Save, Upload } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useState } from 'react';
-import type { Pet } from './PetDetailsScreen';
+import { Animal } from '@/services/AnimalService';
 
-interface AddPetScreenProps {
+interface AddAnimalScreenProps {
   onBack: () => void;
-  onSave: (pet: Omit<Pet, 'id'>) => void;
+  onSave: (animal: Omit<Animal, 'id' | 'shelterId'>) => void;
 }
 
-export function AddPetScreen({ onBack, onSave }: AddPetScreenProps) {
+export function AddAnimalScreen({ onBack, onSave }: AddAnimalScreenProps) {
   const [name, setName] = useState('');
   const [species, setSpecies] = useState('Cachorro');
   const [breed, setBreed] = useState('');
@@ -21,7 +21,7 @@ export function AddPetScreen({ onBack, onSave }: AddPetScreenProps) {
   const [personality, setPersonality] = useState('');
   const [healthStatus, setHealthStatus] = useState('');
   const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [photoUrl, setphotoUrl] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +31,7 @@ export function AddPetScreen({ onBack, onSave }: AddPetScreenProps) {
       return;
     }
 
-    const newPet: Omit<Pet, 'id'> = {
+    const newAnimal: Omit<Animal, 'id' | 'shelterId'> = {
       name,
       species,
       breed,
@@ -43,12 +43,12 @@ export function AddPetScreen({ onBack, onSave }: AddPetScreenProps) {
       personality,
       healthStatus,
       description,
-      image: imageUrl || 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkb2clMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzIwMDg5MzV8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      shelter: 'Meu Abrigo',
+      photoUrl: photoUrl || 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkb2clMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzIwMDg5MzV8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+      shelterName: 'Meu Abrigo',
       location: 'São Paulo, SP'
     };
 
-    onSave(newPet);
+    onSave(newAnimal);
   };
 
   return (
@@ -66,7 +66,7 @@ export function AddPetScreen({ onBack, onSave }: AddPetScreenProps) {
             </button>
             <div className="flex-1 flex items-center justify-center gap-2">
               <Heart className="w-6 h-6 text-purple-600" fill="currentColor" />
-              <h1 className="text-xl text-purple-600">PetConnect</h1>
+              <h1 className="text-xl text-purple-600">AnimalConnect</h1>
             </div>
             <div className="w-24"></div>
           </div>
@@ -91,8 +91,8 @@ export function AddPetScreen({ onBack, onSave }: AddPetScreenProps) {
                 <Upload className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
                   type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
+                  value={photoUrl}
+                  onChange={(e) => setphotoUrl(e.target.value)}
                   className="pl-10 w-full"
                   placeholder="https://exemplo.com/foto.jpg (opcional)"
                 />
