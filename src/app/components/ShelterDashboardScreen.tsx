@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Animal } from '@/services/AnimalService';
 
 interface ShelterDashboardScreenProps {
+  shelterId: Number
   onLogout: () => void;
   onSelectAnimal: (animal: Animal) => void;
   onAddAnimal: () => void;
@@ -14,6 +15,7 @@ interface ShelterDashboardScreenProps {
 }
 
 export function ShelterDashboardScreen({ 
+  shelterId,
   onLogout, 
   onSelectAnimal, 
   onAddAnimal, 
@@ -30,6 +32,8 @@ export function ShelterDashboardScreen({
   const [selectedSize, setSelectedSize] = useState<'all' | 'Pequeno' | 'Médio' | 'Grande'>('all');
 
   const filteredAnimals = shelterAnimals.filter(animal => {
+    console.log(animal)
+    console.log(animal.shelterId, shelterId)
     const matchesSearch = animal.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          animal.breed?.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -39,8 +43,8 @@ export function ShelterDashboardScreen({
     
     const matchesGender = selectedGender === 'all' || animal.gender === selectedGender;
     const matchesSize = selectedSize === 'all' || animal.size === selectedSize;
-    
-    return matchesSearch && matchesCategory && matchesGender && matchesSize;
+    const matchShelter = animal.shelterId === shelterId;
+    return matchesSearch && matchesCategory && matchesGender && matchesSize && matchShelter;
   });
 
   const totalDogs = shelterAnimals.filter(p => p.species === 'Cachorro').length;

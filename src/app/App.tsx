@@ -413,6 +413,7 @@ const handleUpdateProfile = async (updatedProfile: UserProfile) => {
   if (currentScreen === 'shelter-dashboard') {
     return (
       <ShelterDashboardScreen
+        shelterId = {userProfile?.shelterData?.id}
         onLogout={handleLogout}
         onSelectAnimal={handleSelectAnimalInShelter}
         onAddAnimal={handleGoToAddAnimal}
