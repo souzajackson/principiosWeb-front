@@ -121,8 +121,12 @@ export default function App() {
     if (currentScreen !== 'shelter-dashboard') return;
 
     getAllAnimals()
-      .then(setShelterAnimals)
-      .catch(console.error);
+    .then(animals =>
+      setShelterAnimals(
+        animals.filter(animal => animal.shelterId === userProfile?.shelterData!.id)
+      )
+    )
+    .catch(console.error);
   }, [currentScreen]);
 
   // ─── Auth handlers ───────────────────────────────────────────────────────────
@@ -413,7 +417,6 @@ const handleUpdateProfile = async (updatedProfile: UserProfile) => {
   if (currentScreen === 'shelter-dashboard') {
     return (
       <ShelterDashboardScreen
-        shelterId = {userProfile?.shelterData?.id}
         onLogout={handleLogout}
         onSelectAnimal={handleSelectAnimalInShelter}
         onAddAnimal={handleGoToAddAnimal}
