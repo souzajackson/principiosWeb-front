@@ -30,7 +30,7 @@ export function AnimalDetailsScreen({ animal, onBack, onAdopt }: animalDetailsSc
             </button>
             <div className="flex-1 flex items-center justify-center gap-2">
               <Heart className="w-6 h-6 text-purple-600" fill="currentColor" />
-              <h1 className="text-xl text-purple-600">animalConnect</h1>
+              <h1 className="text-xl text-purple-600">PetConnect</h1>
             </div>
             <div className="w-24"></div>
           </div>

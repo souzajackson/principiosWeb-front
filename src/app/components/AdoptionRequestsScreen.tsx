@@ -83,7 +83,7 @@ export function AdoptionRequestsScreen({ onBack, onSelectAnimal, onLogout }: Ado
             </button>
             <div className="flex items-center gap-2">
               <Heart className="w-6 h-6 text-purple-600" fill="currentColor" />
-              <h1 className="text-xl text-purple-600">animalConnect</h1>
+              <h1 className="text-xl text-purple-600">PetConnect</h1>
             </div>
             <div className="relative">
               <button onClick={() => setShowUserMenu(!showUserMenu)} className="p-2 rounded-full hover:bg-gray-100 transition-colors">

@@ -61,7 +61,7 @@ export function ShelterDashboardScreen({
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
               <Heart className="w-6 h-6 text-purple-600" fill="currentColor" />
-              <h1 className="text-xl text-purple-600">AnimalConnect</h1>
+              <h1 className="text-xl text-purple-600">PetConnect</h1>
             </div>
 
             {/* User Menu */}

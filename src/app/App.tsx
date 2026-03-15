@@ -276,7 +276,7 @@ export default function App() {
   const handleGoToAddAnimal     = () => setCurrentScreen('add-Animal');
   const handleBackFromAddAnimal = () => setCurrentScreen('shelter-dashboard');
 
-  const handleSaveNewAnimal = async (AnimalData: Omit<Animal, 'id'>) => {
+  const handleSaveNewAnimal = async (AnimalData: Omit<Animal, 'id' | 'shelterId'>) => {
     try {
       const created = await createAnimal({
         name:         AnimalData.name,

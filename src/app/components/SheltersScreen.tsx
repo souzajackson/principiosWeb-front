@@ -135,7 +135,7 @@ export function SheltersScreen({ onLogout, onSelectShelter, onBackToAnimals, onG
             {/* Logo */}
             <div className="flex items-center gap-2">
               <Heart className="w-8 h-8 text-purple-600" fill="currentColor" />
-              <h1 className="text-2xl text-purple-600">AnimalConnect</h1>
+              <h1 className="text-2xl text-purple-600">PetConnect</h1>
             </div>
 
             {/* Navigation */}
