@@ -8,11 +8,7 @@ import { createShelter } from '@/services/ShelterService';
 import { ApiError } from '@/lib/api';
 
 interface ShelterRegistrationScreenProps {
-  onComplete: (shelterData: {
-    name: string;
-    address: string;
-    phone: string;
-  }) => void;
+  onComplete: () => void;
   onBack: () => void;
 }
 
@@ -31,7 +27,7 @@ export function ShelterRegistrationScreen({ onComplete, onBack }: ShelterRegistr
       setIsSubmitting(true);
 
       await createShelter({ name, phone, address });
-      onComplete({ name, address, phone });
+      onComplete();
     } catch (err) {
       if (err instanceof ApiError) setErrorMsg(err.message);
       else if (err instanceof Error) setErrorMsg(err.message);

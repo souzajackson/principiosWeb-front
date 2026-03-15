@@ -142,10 +142,25 @@ export default function App() {
     saveUser(decoded);
     setAuthUser(decoded);
 
-    const profile = await loadCompleteUserProfile(decoded);
-    setUserProfile(profile);
+    try {
+      const profile = await loadCompleteUserProfile(decoded);
+      setUserProfile(profile);
 
-    setCurrentScreen(decoded.role === 'SHELTER' ? 'shelter-dashboard' : 'home');
+      setCurrentScreen(decoded.role === 'SHELTER' ? 'shelter-dashboard' : 'home');
+    } catch (err) {
+      // Se for shelter e não tiver abrigo cadastrado
+      if (
+        decoded.role === 'SHELTER' &&
+        err instanceof ApiError &&
+        err.status === 404
+      ) {
+        setCurrentScreen('shelter-registration');
+        return;
+      }
+
+      throw err;
+    }
+
   } catch (err) {
     const msg = err instanceof ApiError ? err.message : 'Erro ao fazer login.';
     alert(msg);
@@ -186,21 +201,9 @@ export default function App() {
   const handleBackToSignup = () => setCurrentScreen('signup');
 
   const handleShelterComplete = async () => {
-  if (!signupData) return;
   try {
-    const { token } = await login(signupData.email, signupData.password);
-    saveToken(token);
-    const decoded = decodeTokenPayload(token);
-    if (!decoded) throw new Error('Token inválido');
-    console.log("here", decoded)
-    saveUser(decoded);
-    setAuthUser(decoded);
-
-    const profile = await loadCompleteUserProfile(decoded);
-    setUserProfile(profile);
-
-    setSignupData(null);
-    setCurrentScreen('shelter-dashboard');
+    alert('Cadastro realizado! Faça login para continuar. ✅');
+    setCurrentScreen('login');
   } catch (err) {
     alert(err instanceof ApiError ? err.message : 'Erro ao cadastrar abrigo.');
   }
