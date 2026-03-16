@@ -31,7 +31,6 @@ import {
 import { ApiError } from '../lib/api';
 import { Animal, createAnimal, deleteAnimal, getAllAnimals, updateAnimal } from '@/services/AnimalService';
 import { getUserById, UserProfile } from '@/services/UserService';
-import { createVisit } from '@/services/VisitService';
 import { createAdoption } from '@/services/AdoptionService';
 import { AddAnimalScreen } from './components/AddAnimalScreen';
 import { ManageAnimalScreen } from './components/ManageAnimalScreen';
@@ -298,7 +297,7 @@ export default function App() {
         personality:  AnimalData.personality,
         healthStatus: AnimalData.healthStatus,
         description:  AnimalData.description,
-        shelterId:    authUser!.id,
+        shelterId: userProfile!.shelterData!.id,  // ✅ ID real do abrigo
       });
       setShelterAnimals(prev => [...prev, created]);
       setCurrentScreen('shelter-dashboard');
@@ -314,17 +313,16 @@ export default function App() {
   const handleScheduleVisit  = () => setShowScheduleModal(true);
   const handleCancelSchedule = () => setShowScheduleModal(false);
 
-  const handleConfirmVisit = async (date: string, time: string) => {
-    if (!selectedShelter) return;
-    try {
-      await createVisit({ shelterId: Number(selectedShelter.id), date, time });
-      setShowScheduleModal(false);
-      alert(`Visita agendada com sucesso para ${new Date(date).toLocaleDateString('pt-BR')} às ${time}! 📅`);
-    } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Erro ao agendar visita.';
-      alert(msg);
-    }
+  const handleConfirmVisit = (date: string, time: string) => {
+    setShowScheduleModal(false);
+    alert(`Visita agendada com sucesso para ${formatDateBR(date)} às ${time}! 📅`);
   };
+
+  // Adicione essa helper junto com o handler (ou no topo do arquivo)
+  function formatDateBR(isoDate: string): string {
+    const [year, month, day] = isoDate.split('-');
+    return `${day}/${month}/${year}`;
+  }
 
   // ─── Navigation helpers ───────────────────────────────────────────────────────
 
@@ -486,6 +484,7 @@ const handleUpdateProfile = async (updatedProfile: UserProfile) => {
         {showScheduleModal && (
           <ScheduleVisitModal
             shelter={selectedShelter}
+            userId={authUser!.id} 
             onConfirm={handleConfirmVisit}
             onCancel={handleCancelSchedule}
           />

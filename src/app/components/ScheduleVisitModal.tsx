@@ -2,6 +2,8 @@ import { X, Calendar, Clock } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useState } from 'react';
+import { createVisit } from '../../services/VisitService';
+import { ApiError } from '../../lib/api';
 
 export interface Shelter {
   id: string;
@@ -22,54 +24,73 @@ export interface Shelter {
 
 interface ScheduleVisitModalProps {
   shelter: Shelter;
+  userId: number;           // ← novo
   onConfirm: (date: string, time: string) => void;
   onCancel: () => void;
 }
 
-export function ScheduleVisitModal({ shelter, onConfirm, onCancel }: ScheduleVisitModalProps) {
+// Converte "2025-06-15" → "15/06/2025" sem problema de fuso
+function formatDateBR(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-');
+  return `${day}/${month}/${year}`;
+}
+
+export function ScheduleVisitModal({ shelter, userId, onConfirm, onCancel }: ScheduleVisitModalProps) {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSchedule = (e: React.FormEvent) => {
     e.preventDefault();
-    if (date && time) {
-      setShowConfirm(true);
-    }
+    if (date && time) setShowConfirm(true);
   };
 
-  const handleConfirm = () => {
-    onConfirm(date, time);
+  const handleConfirm = async () => {
+    setIsLoading(true);
+    try {
+      // Combina "2025-06-15" + "14:30" → "2025-06-15T14:30:00.000Z"
+      const isoTimestamp = `${date}T${time}:00`;
+
+      await createVisit({
+        shelterId: Number(shelter.id),
+        userId,
+        date: isoTimestamp,
+      });
+
+      onConfirm(date, time);
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao agendar visita.';
+      alert(msg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (showConfirm) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-          {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h2 className="text-2xl text-gray-900">Confirmar Agendamento</h2>
-            <button
-              onClick={onCancel}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
+            <button onClick={onCancel} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
               <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
 
-          {/* Content */}
           <div className="p-6">
             <div className="mb-6 p-4 bg-purple-50 rounded-lg">
-              <h3 className="text-lg text-gray-900 mb-2">{shelter.name}</h3>
+              <h3 className="text-lg text-gray-900 mb-1">{shelter.name}</h3>
               <p className="text-sm text-gray-600">{shelter.address}</p>
             </div>
 
-            <div className="space-y-4 mb-6">
+            <div className="space-y-3 mb-6">
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <Calendar className="w-5 h-5 text-purple-600" />
                 <div>
                   <p className="text-xs text-gray-500">Data</p>
-                  <p className="text-gray-900">{new Date(date).toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  {/* DD/MM/YYYY sem depender do locale do navegador */}
+                  <p className="text-gray-900">{formatDateBR(date)}</p>
                 </div>
               </div>
 
@@ -77,6 +98,7 @@ export function ScheduleVisitModal({ shelter, onConfirm, onCancel }: ScheduleVis
                 <Clock className="w-5 h-5 text-purple-600" />
                 <div>
                   <p className="text-xs text-gray-500">Horário</p>
+                  {/* Exibe diretamente o valor HH:MM em 24h */}
                   <p className="text-gray-900">{time}</p>
                 </div>
               </div>
@@ -88,20 +110,21 @@ export function ScheduleVisitModal({ shelter, onConfirm, onCancel }: ScheduleVis
               </p>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3">
               <Button
                 onClick={() => setShowConfirm(false)}
                 variant="outline"
                 className="flex-1 py-3 border-gray-300 text-gray-700 hover:bg-gray-50"
+                disabled={isLoading}
               >
                 Voltar
               </Button>
               <Button
                 onClick={handleConfirm}
                 className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white"
+                disabled={isLoading}
               >
-                Confirmar Visita
+                {isLoading ? 'Agendando...' : 'Confirmar Visita'}
               </Button>
             </div>
           </div>
@@ -113,25 +136,17 @@ export function ScheduleVisitModal({ shelter, onConfirm, onCancel }: ScheduleVis
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl text-gray-900">Agendar Visita</h2>
-          <button
-            onClick={onCancel}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
+          <button onClick={onCancel} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
-        {/* Content */}
         <form onSubmit={handleSchedule} className="p-6">
           <div className="mb-6 p-4 bg-purple-50 rounded-lg">
-            <h3 className="text-lg text-gray-900 mb-2">{shelter.name}</h3>
-            <p className="text-sm text-gray-600 mb-3">{shelter.address}</p>
-            <p className="text-sm text-purple-700">
-              <strong>Horário de funcionamento:</strong> {shelter.workingHours}
-            </p>
+            <h3 className="text-lg text-gray-900 mb-1">{shelter.name}</h3>
+            <p className="text-sm text-gray-600">{shelter.address}</p>
           </div>
 
           <div className="space-y-4 mb-6">
@@ -148,6 +163,8 @@ export function ScheduleVisitModal({ shelter, onConfirm, onCancel }: ScheduleVis
                   onChange={(e) => setDate(e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
                   className="pl-10"
+                  // Força o picker a exibir no formato brasileiro (DD/MM/YYYY)
+                  lang="pt-BR"
                   required
                 />
               </div>
@@ -165,6 +182,8 @@ export function ScheduleVisitModal({ shelter, onConfirm, onCancel }: ScheduleVis
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
                   className="pl-10"
+                  // Força o picker a usar formato 24h
+                  step="60"
                   required
                 />
               </div>
@@ -177,7 +196,6 @@ export function ScheduleVisitModal({ shelter, onConfirm, onCancel }: ScheduleVis
             </p>
           </div>
 
-          {/* Actions */}
           <div className="flex gap-3">
             <Button
               type="button"

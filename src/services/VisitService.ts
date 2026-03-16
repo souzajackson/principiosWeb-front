@@ -20,7 +20,7 @@ export function getVisitById(id: number) {
   return http<Visit>(`/visits/${id}`);
 }
 
-export function createVisit(data: { shelterId: number; date: string; time?: string }) {
+export function createVisit(data: { shelterId: number; userId: number; date: string }) {
   return http<Visit>('/visits', { method: 'POST', body: data });
 }
 
