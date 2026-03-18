@@ -9,9 +9,10 @@ interface ShelterDetailsScreenProps {
   shelter: Shelter;
   onBack: () => void;
   onScheduleVisit: () => void;
+  onSelectAnimal: (animal: Animal) => void;
 }
 
-export function ShelterDetailsScreen({ shelter, onBack, onScheduleVisit }: ShelterDetailsScreenProps) {
+export function ShelterDetailsScreen({ shelter, onBack, onScheduleVisit, onSelectAnimal }: ShelterDetailsScreenProps) {
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -143,32 +144,48 @@ export function ShelterDetailsScreen({ shelter, onBack, onScheduleVisit }: Shelt
           )}
 
           {!isLoading && animals.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div>
               {animals.map(animal => (
-                <div key={animal.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="h-36 bg-purple-50 overflow-hidden">
-                    {animal.photoUrl ? (
-                      <ImageWithFallback
-                        src={animal.photoUrl}
-                        alt={animal.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <PawPrint className="w-10 h-10 text-purple-200" />
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {animals.map((animal) => (
+                  <div key={animal.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group" onClick={() => onSelectAnimal(animal)}>
+                    <div className="relative h-64 overflow-hidden bg-gray-200">
+                      <ImageWithFallback src={animal.photoUrl} alt={animal.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <button className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-purple-50 transition-colors">
+                        <Heart className="w-5 h-5 text-purple-600" />
+                      </button>
+                    </div>
+                    <div className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h4 className="text-xl text-gray-900 mb-1">{animal.name}</h4>
+                          <p className="text-sm text-gray-600">{animal.breed} • {animal.age} anos</p>
+                        </div>
+                        <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
+                          {animal.species === 'Cachorro' ? '🐕 Cão' : '🐱 Gato'}
+                        </span>
                       </div>
-                    )}
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        {animal.shelterName && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Building2 className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">{animal.shelterName}</span>
+                          </div>
+                        )}
+                        {animal.location && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
+                            <MapPin className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">{animal.location}</span>
+                          </div>
+                        )}
+                      </div>
+                      <button className="w-full mt-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
+                        Ver detalhes
+                      </button>
+                    </div>
                   </div>
-                  <div className="p-3">
-                    <p className="text-gray-900 truncate">{animal.name}</p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {[animal.species, animal.breed].filter(Boolean).join(' • ')}
-                    </p>
-                    {animal.age && (
-                      <p className="text-xs text-purple-600 mt-1">{animal.age}</p>
-                    )}
-                  </div>
-                </div>
+                ))}
+              </div>
               ))}
             </div>
           )}

@@ -49,12 +49,11 @@ export function ScheduleVisitModal({ shelter, userId, onConfirm, onCancel }: Sch
   const handleConfirm = async () => {
     setIsLoading(true);
     try {
-      // Combina "2025-06-15" + "14:30" → "2025-06-15T14:30:00.000Z"
-      const isoTimestamp = `${date}T${time}:00`;
+      const localDate = new Date(`${date}T${time}:00`);
+      const isoTimestamp = localDate.toISOString();
 
       await createVisit({
         shelterId: Number(shelter.id),
-        userId,
         date: isoTimestamp,
       });
 

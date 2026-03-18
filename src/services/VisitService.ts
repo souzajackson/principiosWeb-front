@@ -20,10 +20,14 @@ export function getVisitById(id: number) {
   return http<Visit>(`/visits/${id}`);
 }
 
-export function createVisit(data: { shelterId: number; userId: number; date: string }) {
+export function createVisit(data: { shelterId: number; date: string }) {
   return http<Visit>('/visits', { method: 'POST', body: data });
 }
 
 export function deleteVisit(id: number) {
   return http<{ message: string }>(`/visits/${id}`, { method: 'DELETE' });
+}
+
+export function getMyVisits() {
+  return http<Visit[]>('/visits/me');
 }

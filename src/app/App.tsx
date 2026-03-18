@@ -35,6 +35,7 @@ import { createAdoption } from '@/services/AdoptionService';
 import { AddAnimalScreen } from './components/AddAnimalScreen';
 import { ManageAnimalScreen } from './components/ManageAnimalScreen';
 import { getMyShelter, updateShelter } from '@/services/ShelterService';
+import { createVisit } from '@/services/VisitService';
 
 // ─── Tipos locais ─────────────────────────────────────────────────────────────
 
@@ -477,6 +478,7 @@ const handleUpdateProfile = async (updatedProfile: UserProfile) => {
     return (
       <>
         <ShelterDetailsScreen
+          onSelectAnimal={handleSelectAnimal}
           shelter={selectedShelter}
           onBack={handleBackToShelters}
           onScheduleVisit={handleScheduleVisit}
