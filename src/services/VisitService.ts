@@ -11,6 +11,21 @@ export interface Visit {
   shelter?: Shelter;
 }
 
+export interface ShelterVisitResponse {
+  id: number;
+  visitDate: string;
+  visitTime: string;
+  requestDate: string;
+  status: 'confirmed' | 'cancelled';
+  visitor: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+  } | null;
+}
+
 
 export function getAllVisits() {
   return http<Visit[]>('/visits');
@@ -30,4 +45,8 @@ export function deleteVisit(id: number) {
 
 export function getMyVisits() {
   return http<Visit[]>('/visits/me');
+}
+
+export function getMyShelterVisits() {
+  return http<ShelterVisitResponse[]>('/visits/me');
 }

@@ -14,15 +14,13 @@ import {
 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Button } from './ui/button';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { deleteVisit, getMyVisits, type Visit } from '../../services/VisitService';
 
 interface MyVisitsScreenProps {
   onBack: () => void;
   onLogout: () => void;
 }
-
-type VisitStatus = 'scheduled' | 'cancelled';
 
 interface ScheduledVisit {
   id: string;
@@ -36,7 +34,6 @@ interface ScheduledVisit {
   shelterEmail: string;
   visitDate: string;
   visitTime: string;
-  status: VisitStatus;
 }
 
 function mapVisitToScheduledVisit(visit: Visit): ScheduledVisit {
@@ -59,7 +56,6 @@ function mapVisitToScheduledVisit(visit: Visit): ScheduledVisit {
         hour: '2-digit',
         minute: '2-digit',
       }),
-    status: visit.status === 'cancelled' ? 'cancelled' : 'scheduled',
   };
 }
 
@@ -105,11 +101,7 @@ export function MyVisitsScreen({ onBack, onLogout }: MyVisitsScreenProps) {
 
       await deleteVisit(Number(visitId));
 
-      setVisits((prev) =>
-        prev.map((visit) =>
-          visit.id === visitId ? { ...visit, status: 'cancelled' } : visit
-        )
-      );
+      setVisits((prev) => prev.filter((visit) => visit.id !== visitId));
 
       setConfirmCancelId(null);
       alert('Visita cancelada com sucesso! ❌');
@@ -120,16 +112,6 @@ export function MyVisitsScreen({ onBack, onLogout }: MyVisitsScreenProps) {
       setIsCancelling(false);
     }
   };
-
-  const scheduledVisits = useMemo(
-    () => visits.filter((v) => v.status === 'scheduled'),
-    [visits]
-  );
-
-  const cancelledVisits = useMemo(
-    () => visits.filter((v) => v.status === 'cancelled'),
-    [visits]
-  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -215,42 +197,29 @@ export function MyVisitsScreen({ onBack, onLogout }: MyVisitsScreenProps) {
         {!isLoading && !error && (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 mb-8">
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                     <Calendar className="w-6 h-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-3xl text-gray-900">{scheduledVisits.length}</p>
+                    <p className="text-3xl text-gray-900">{visits.length}</p>
                     <p className="text-sm text-gray-600">Visitas Agendadas</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                    <Trash2 className="w-6 h-6 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="text-3xl text-gray-900">{cancelledVisits.length}</p>
-                    <p className="text-sm text-gray-600">Visitas Canceladas</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Scheduled Visits */}
-            {scheduledVisits.length > 0 && (
+            {/* Visits */}
+            {visits.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-2xl text-gray-900 mb-4">Próximas Visitas</h3>
                 <div className="space-y-4">
-                  {scheduledVisits.map((visit) => (
+                  {visits.map((visit) => (
                     <div key={visit.id} className="bg-white rounded-xl shadow-md overflow-hidden">
                       <div className="p-6">
                         <div className="flex flex-col md:flex-row gap-6">
-                          {/* Shelter Image */}
                           <div className="w-full md:w-32 h-32 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
                             {visit.shelterImage ? (
                               <ImageWithFallback
@@ -265,7 +234,6 @@ export function MyVisitsScreen({ onBack, onLogout }: MyVisitsScreenProps) {
                             )}
                           </div>
 
-                          {/* Visit Info */}
                           <div className="flex-1">
                             <div className="flex items-start justify-between mb-4">
                               <div>
@@ -336,38 +304,8 @@ export function MyVisitsScreen({ onBack, onLogout }: MyVisitsScreenProps) {
               </div>
             )}
 
-            {/* Cancelled Visits */}
-            {cancelledVisits.length > 0 && (
-              <div>
-                <h3 className="text-2xl text-gray-900 mb-4">Visitas Canceladas</h3>
-                <div className="space-y-4">
-                  {cancelledVisits.map((visit) => (
-                    <div
-                      key={visit.id}
-                      className="bg-gray-100 border border-gray-300 rounded-xl overflow-hidden opacity-60"
-                    >
-                      <div className="p-6">
-                        <div className="flex items-center gap-4 mb-3">
-                          <Building2 className="w-6 h-6 text-gray-500" />
-                          <div>
-                            <h4 className="text-lg text-gray-900">{visit.shelterName}</h4>
-                            <span className="px-3 py-1 bg-red-600 text-white rounded-full text-sm inline-block mt-1">
-                              Cancelada
-                            </span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600">
-                          {new Date(visit.visitDate).toLocaleDateString('pt-BR')} às {visit.visitTime}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Empty State */}
-            {scheduledVisits.length === 0 && cancelledVisits.length === 0 && (
+            {visits.length === 0 && (
               <div className="bg-white rounded-xl shadow-sm p-12 text-center">
                 <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500 mb-2">Você ainda não agendou nenhuma visita</p>
